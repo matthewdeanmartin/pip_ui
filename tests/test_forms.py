@@ -249,7 +249,7 @@ def test_render_global_args_proxy():
 
 
 def test_render_global_args_empty():
-    assert render_global_args({}) == []
+    assert not render_global_args({})
 
 
 def test_global_options_listing_is_non_empty():

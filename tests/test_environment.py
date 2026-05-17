@@ -1,8 +1,14 @@
 """Tests for environment module."""
 
+from __future__ import annotations
+
+import subprocess
 import sys
 
+import pytest
+
 from pip_ui.environment import InterpreterDiscovery
+from pip_ui.models import InterpreterInfo
 
 
 def test_is_venv_true():
@@ -43,8 +49,6 @@ def test_discover_finds_at_least_one():
 
 
 def test_discover_returns_list_of_interpreter_info():
-    from pip_ui.models import InterpreterInfo
-
     discovery = InterpreterDiscovery()
     results = discovery.discover()
     for item in results:
@@ -57,3 +61,14 @@ def test_is_venv_edge_cases():
     discovery = InterpreterDiscovery()
     assert discovery.is_venv("", "") is False
     assert discovery.is_venv("/a/b/c", "/a/b") is True
+
+
+def test_get_pip_version_returns_unknown_on_probe_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    discovery = InterpreterDiscovery()
+
+    def raise_os_error(*args: object, **kwargs: object) -> None:
+        raise OSError("boom")
+
+    monkeypatch.setattr(subprocess, "run", raise_os_error)
+
+    assert discovery.get_pip_version(sys.executable) == "unknown"

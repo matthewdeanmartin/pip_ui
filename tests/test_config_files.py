@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 
 from pip_ui.config_inspector import (
@@ -63,7 +64,7 @@ def test_parse_config_files_handles_windows_paths():
 
 
 def test_parse_config_files_empty():
-    assert parse_config_files("") == []
+    assert not parse_config_files("")
 
 
 def test_detect_index_info_returns_dataclass():
@@ -111,8 +112,6 @@ def test_diagnostics_text_format_includes_workdir():
 
 
 def test_env_vars_redact_default():
-    import os
-
     os.environ["PIP_INDEX_URL_TEST_REDACT"] = "https://user:secret@example.com/simple"
     try:
         inspector = ConfigInspector(sys.executable)

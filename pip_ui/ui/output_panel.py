@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, Callable, Optional
+from typing import Any, cast
+from collections.abc import Callable
+
+from pip_ui.ui.dialogs import save_file_dialog
 
 MONO_FONT = ("Consolas", 10)
 
@@ -12,8 +15,8 @@ MONO_FONT = ("Consolas", 10)
 class OutputPanel(ttk.Frame):
     def __init__(
         self,
-        parent: tk.Widget,
-        on_cancel: Optional[Callable[[bool], None]] = None,
+        parent: tk.Misc,
+        on_cancel: Callable[[bool], None] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(parent, **kwargs)
@@ -70,7 +73,7 @@ class OutputPanel(ttk.Frame):
         scrollbar.config(command=text.yview)
         return text
 
-    def append_to(self, widget: tk.Text, text: str, tag: Optional[str] = None) -> None:
+    def append_to(self, widget: tk.Text, text: str, tag: str | None = None) -> None:
         widget.configure(state=tk.NORMAL)
         if tag:
             widget.insert(tk.END, text, tag)
@@ -87,7 +90,7 @@ class OutputPanel(ttk.Frame):
         self.append_to(self.stderr_text, text, "stderr")
         self.append_to(self.combined_text, text, "stderr")
 
-    def append_combined(self, text: str, tag: Optional[str] = None) -> None:
+    def append_combined(self, text: str, tag: str | None = None) -> None:
         self.append_to(self.combined_text, text, tag)
 
     def set_command_info(self, info_dict: dict[str, Any]) -> None:
@@ -126,17 +129,18 @@ class OutputPanel(ttk.Frame):
             widget.delete("1.0", tk.END)
             widget.configure(state=tk.DISABLED)
 
+    def active_output_widget(self) -> tk.Text:
+        widgets: list[tk.Text] = [self.combined_text, self.stdout_text, self.stderr_text, self.info_text]
+        active_tab = self.notebook.index(self.notebook.select())  # type: ignore[no-untyped-call]
+        return cast(tk.Text, widgets[active_tab])
+
     def copy_all(self) -> None:
-        active_tab = self.notebook.index(self.notebook.select())
-        widgets = [self.combined_text, self.stdout_text, self.stderr_text, self.info_text]
-        widget = widgets[active_tab]
+        widget = self.active_output_widget()
         content = widget.get("1.0", tk.END)
         self.clipboard_clear()
         self.clipboard_append(content)
 
     def save_output(self) -> None:
-        from pip_ui.ui.dialogs import save_file_dialog
-
         path = save_file_dialog(
             self,
             title="Save Output",
@@ -144,9 +148,7 @@ class OutputPanel(ttk.Frame):
             filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
         )
         if path:
-            active_tab = self.notebook.index(self.notebook.select())
-            widgets = [self.combined_text, self.stdout_text, self.stderr_text, self.info_text]
-            widget = widgets[active_tab]
+            widget = self.active_output_widget()
             content = widget.get("1.0", tk.END)
             with open(path, "w", encoding="utf-8") as fh:
                 fh.write(content)
@@ -155,9 +157,7 @@ class OutputPanel(ttk.Frame):
         term = self.search_var.get()
         if not term:
             return
-        active_tab = self.notebook.index(self.notebook.select())
-        widgets = [self.combined_text, self.stdout_text, self.stderr_text, self.info_text]
-        widget = widgets[active_tab]
+        widget = self.active_output_widget()
         widget.tag_remove("search", "1.0", tk.END)
         widget.tag_configure("search", background="yellow")
         start = "1.0"

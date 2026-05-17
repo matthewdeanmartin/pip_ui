@@ -6,12 +6,11 @@ import json
 import os
 import platform
 import re
-import subprocess
+import subprocess  # nosec B404
 import sys
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from pip_ui.safety import redact_url
 
@@ -48,13 +47,13 @@ class ConfigFileInfo:
     path: str
     scope: str
     exists: bool
-    size: Optional[int]
-    modified: Optional[str]
+    size: int | None
+    modified: str | None
 
 
 @dataclass
 class IndexInfo:
-    main_index_url: Optional[str]
+    main_index_url: str | None
     extra_index_urls: list[str]
     no_index: bool
     find_links: list[str]
@@ -67,17 +66,17 @@ class ConfigInspector:
         self.python_path = python_path
 
     def run_pip_command(self, args: list[str]) -> tuple[str, str, int]:
-        argv = [self.python_path, "-m", "pip"] + args
+        argv = [self.python_path, "-m", "pip", *args]
         try:
             result = subprocess.run(
                 argv,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 text=True,
+                check=False,
                 shell=False,
-            )
+            )  # nosec B603
             return result.stdout, result.stderr, result.returncode
-        except Exception as exc:
+        except (OSError, subprocess.SubprocessError) as exc:
             return "", str(exc), -1
 
     def run_config_debug(self) -> str:
@@ -133,7 +132,7 @@ class ConfigInspector:
         no_index_str = (config.get("global.no-index") or env.get("PIP_NO_INDEX") or "").lower()
         no_index = no_index_str in {"1", "true", "yes", "on"}
 
-        all_urls = [main_index or ""] + extras
+        all_urls = [main_index or "", *extras]
         has_creds = any(re.search(r"://[^:@/\s]+:[^@/\s]+@", u) for u in all_urls)
 
         return IndexInfo(
@@ -154,10 +153,10 @@ class ConfigInspector:
 
     def build_diagnostics_report(
         self,
-        format: str = "markdown",
-        last_command: Optional[str] = None,
-        last_exit_code: Optional[int] = None,
-        working_directory: Optional[str] = None,
+        output_format: str = "markdown",
+        last_command: str | None = None,
+        last_exit_code: int | None = None,
+        working_directory: str | None = None,
         show_secrets: bool = False,
     ) -> str:
         pip_version = self.get_pip_version()
@@ -171,7 +170,7 @@ class ConfigInspector:
         os_info = f"{platform.system()} {platform.release()} ({platform.machine()})"
         wd = working_directory or os.getcwd()
 
-        if format == "json":
+        if output_format == "json":
             data = {
                 "os": os_info,
                 "python_executable": self.python_path,
@@ -191,7 +190,7 @@ class ConfigInspector:
             }
             return json.dumps(data, indent=2)
 
-        if format == "markdown":
+        if output_format == "markdown":
             lines = [
                 "# pip-ui Diagnostics Report",
                 "",
@@ -321,7 +320,7 @@ def parse_config_files(debug_output: str) -> list[ConfigFileInfo]:
          /home/u/.venv/pip.conf, exists: False
     """
     files: list[ConfigFileInfo] = []
-    current_scope: Optional[str] = None
+    current_scope: str | None = None
     for raw in debug_output.splitlines():
         stripped = raw.rstrip()
         if not stripped:
@@ -340,8 +339,8 @@ def parse_config_files(debug_output: str) -> list[ConfigFileInfo]:
             path = m.group("path").strip()
             exists_field = m.group("exists")
             file_exists = (exists_field == "True") if exists_field is not None else Path(path).exists()
-            size: Optional[int] = None
-            modified: Optional[str] = None
+            size: int | None = None
+            modified: str | None = None
             try:
                 if file_exists:
                     st = Path(path).stat()

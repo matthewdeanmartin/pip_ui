@@ -22,7 +22,7 @@ def make_entry(label: str = "Install", exit_code: int = 0) -> HistoryEntry:
     )
 
 
-def test_add_and_load(tmp_path: Path):
+def test_add_and_load(tmp_path: Path) -> None:
     history = CommandHistory(data_dir=tmp_path)
     entry = make_entry()
     history.add(entry)
@@ -33,7 +33,7 @@ def test_add_and_load(tmp_path: Path):
     assert loaded[0].duration == pytest.approx(1.23)
 
 
-def test_history_persists_to_file(tmp_path: Path):
+def test_history_persists_to_file(tmp_path: Path) -> None:
     history = CommandHistory(data_dir=tmp_path)
     history.add(make_entry("Freeze"))
     history2 = CommandHistory(data_dir=tmp_path)
@@ -42,7 +42,7 @@ def test_history_persists_to_file(tmp_path: Path):
     assert loaded[0].command_label == "Freeze"
 
 
-def test_clear(tmp_path: Path):
+def test_clear(tmp_path: Path) -> None:
     history = CommandHistory(data_dir=tmp_path)
     history.add(make_entry())
     history.add(make_entry("List"))
@@ -51,7 +51,7 @@ def test_clear(tmp_path: Path):
     assert len(loaded) == 0
 
 
-def test_multiple_entries(tmp_path: Path):
+def test_multiple_entries(tmp_path: Path) -> None:
     history = CommandHistory(data_dir=tmp_path)
     for label in ["Install", "List", "Freeze", "Check"]:
         history.add(make_entry(label))
@@ -62,13 +62,13 @@ def test_multiple_entries(tmp_path: Path):
     assert "Check" in labels
 
 
-def test_load_empty(tmp_path: Path):
+def test_load_empty(tmp_path: Path) -> None:
     history = CommandHistory(data_dir=tmp_path)
     loaded = history.load()
-    assert loaded == []
+    assert not loaded
 
 
-def test_entry_timestamp_preserved(tmp_path: Path):
+def test_entry_timestamp_preserved(tmp_path: Path) -> None:
     history = CommandHistory(data_dir=tmp_path)
     ts = datetime(2024, 6, 1, 12, 0, 0)
     entry = HistoryEntry(
@@ -84,3 +84,15 @@ def test_entry_timestamp_preserved(tmp_path: Path):
     history.add(entry)
     loaded = history.load()
     assert loaded[0].timestamp == ts
+
+
+def test_load_skips_invalid_json_line(tmp_path: Path) -> None:
+    history = CommandHistory(data_dir=tmp_path)
+    history.history_file.write_text("{invalid json}\n", encoding="utf-8")
+    assert not history.load()
+
+
+def test_load_skips_missing_fields(tmp_path: Path) -> None:
+    history = CommandHistory(data_dir=tmp_path)
+    history.history_file.write_text('{"timestamp":"2024-06-01T12:00:00"}\n', encoding="utf-8")
+    assert not history.load()

@@ -51,3 +51,9 @@ def test_save_overwrites(tmp_path: Path) -> None:
     p = store.get("p")
     assert p is not None
     assert p["values"]["v"] == 2
+
+
+def test_load_invalid_json_returns_empty_dict(tmp_path: Path) -> None:
+    store = PresetStore(data_dir=tmp_path)
+    store.presets_file.write_text("{not json}", encoding="utf-8")
+    assert store.load() == {}

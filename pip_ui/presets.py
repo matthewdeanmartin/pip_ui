@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 class PresetStore:
-    def __init__(self, data_dir: Optional[Path] = None) -> None:
+    def __init__(self, data_dir: Path | None = None) -> None:
         self.data_dir = data_dir if data_dir is not None else Path.home() / ".pip_ui"
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.presets_file = self.data_dir / "presets.json"
@@ -34,7 +34,7 @@ class PresetStore:
         presets[name] = {"command": command_name, "values": values}
         self.save_all(presets)
 
-    def get(self, name: str) -> Optional[dict[str, Any]]:
+    def get(self, name: str) -> dict[str, Any] | None:
         return self.load().get(name)
 
     def delete(self, name: str) -> None:

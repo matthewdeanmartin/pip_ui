@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shlex
 from typing import Any
 
 from pip_ui.command_specs import COMMAND_SPECS, SPECIAL_ARGV
@@ -21,18 +22,18 @@ def build_argv_for_spec(spec: CommandSpec, values: dict[str, Any]) -> list[str]:
         scope = str(values.get("scope") or "user").strip()
         key = str(values.get("key") or "").strip()
         value = str(values.get("value") or "")
-        argv = ["config", f"--{scope}", "set"]
+        config_argv = ["config", f"--{scope}", "set"]
         if key:
-            argv.append(key)
-            argv.append(value)
-        return argv
+            config_argv.append(key)
+            config_argv.append(value)
+        return config_argv
     if spec.name == "config_unset":
         scope = str(values.get("scope") or "user").strip()
         key = str(values.get("key") or "").strip()
-        argv = ["config", f"--{scope}", "unset"]
+        config_argv = ["config", f"--{scope}", "unset"]
         if key:
-            argv.append(key)
-        return argv
+            config_argv.append(key)
+        return config_argv
     if spec.name == "config_edit":
         scope = str(values.get("scope") or "user").strip()
         return ["config", f"--{scope}", "edit"]
@@ -50,11 +51,11 @@ def build_argv_for_spec(spec: CommandSpec, values: dict[str, Any]) -> list[str]:
         return ["cache", "remove", pattern] if pattern else ["cache", "remove"]
     if spec.name == "index_versions":
         pkg = str(values.get("package") or "").strip()
-        argv: list[str] = ["index", "versions"]
+        index_argv: list[str] = ["index", "versions"]
         if pkg:
-            argv.append(pkg)
-        argv += render_general_args(spec, values, skip={"package"})
-        return argv
+            index_argv.append(pkg)
+        index_argv += render_general_args(spec, values, skip={"package"})
+        return index_argv
 
     argv = [spec.name]
     argv += render_general_args(spec, values)
@@ -73,9 +74,8 @@ def render_general_args(
             continue
         value = values.get(arg.name)
         if arg.field_type == "checkbox":
-            if value:
-                if arg.flag:
-                    out.append(arg.flag)
+            if value and arg.flag:
+                out.append(arg.flag)
             continue
         if value in (None, ""):
             continue
@@ -87,9 +87,8 @@ def render_general_args(
                 out.append(token)
             continue
         if arg.field_type == "dropdown":
-            if str(value) and str(value) != (str(arg.default) if arg.default is not None else ""):
-                if arg.flag:
-                    out.extend([arg.flag, str(value)])
+            if str(value) and str(value) != (str(arg.default) if arg.default is not None else "") and arg.flag:
+                out.extend([arg.flag, str(value)])
             continue
         # text / file / dir
         if arg.flag:
@@ -234,7 +233,6 @@ def parse_raw_extra(raw: str) -> list[str]:
     """Tokenize a free-form extra-args string. Supports double-quoted segments."""
     if not raw:
         return []
-    import shlex
 
     try:
         return shlex.split(raw, posix=True)

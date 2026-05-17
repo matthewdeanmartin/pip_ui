@@ -3,21 +3,22 @@
 from __future__ import annotations
 
 import re
-import subprocess
+import subprocess  # nosec B404
 import threading
-from typing import Callable, Optional
+from typing import TextIO
+from collections.abc import Callable
 
 CRED_RE = re.compile(r"(://)[^:@/\s]+:[^@/\s]+@")
 
 
 class PipRunner:
     def __init__(self) -> None:
-        self.process: Optional[subprocess.Popen[str]] = None
+        self.process: subprocess.Popen[str] | None = None
         self.cancelled = False
         self.killed = False
 
     def build_argv(self, python_path: str, pip_args: list[str]) -> list[str]:
-        return [python_path, "-m", "pip"] + pip_args
+        return [python_path, "-m", "pip", *pip_args]
 
     def format_command(self, argv: list[str]) -> str:
         parts = []
@@ -48,39 +49,40 @@ class PipRunner:
 
         def worker() -> None:
             try:
-                self.process = subprocess.Popen(
+                with subprocess.Popen(
                     argv,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     text=True,
                     cwd=cwd,
                     shell=False,
-                )
-                assert self.process.stdout is not None
-                assert self.process.stderr is not None
+                ) as process:  # nosec B603
+                    self.process = process
+                    assert process.stdout is not None
+                    assert process.stderr is not None
 
-                stdout_thread = threading.Thread(
-                    target=self.read_stream,
-                    args=(self.process.stdout, on_stdout),
-                    daemon=True,
-                )
-                stderr_thread = threading.Thread(
-                    target=self.read_stream,
-                    args=(self.process.stderr, on_stderr),
-                    daemon=True,
-                )
-                stdout_thread.start()
-                stderr_thread.start()
-                stdout_thread.join()
-                stderr_thread.join()
-                self.process.wait()
-                if self.killed:
-                    exit_code = -9
-                elif self.cancelled:
-                    exit_code = -1
-                else:
-                    exit_code = self.process.returncode
-            except Exception:
+                    stdout_thread = threading.Thread(
+                        target=self.read_stream,
+                        args=(process.stdout, on_stdout),
+                        daemon=True,
+                    )
+                    stderr_thread = threading.Thread(
+                        target=self.read_stream,
+                        args=(process.stderr, on_stderr),
+                        daemon=True,
+                    )
+                    stdout_thread.start()
+                    stderr_thread.start()
+                    stdout_thread.join()
+                    stderr_thread.join()
+                    process.wait()
+                    if self.killed:
+                        exit_code = -9
+                    elif self.cancelled:
+                        exit_code = -1
+                    else:
+                        exit_code = process.returncode if process.returncode is not None else -1
+            except (OSError, subprocess.SubprocessError):
                 exit_code = -1
             finally:
                 on_done(exit_code)
@@ -88,8 +90,8 @@ class PipRunner:
         thread = threading.Thread(target=worker, daemon=True)
         thread.start()
 
-    def read_stream(self, stream: object, callback: Callable[[str], None]) -> None:
-        for line in iter(stream.readline, ""):  # type: ignore[attr-defined]
+    def read_stream(self, stream: TextIO, callback: Callable[[str], None]) -> None:
+        for line in iter(stream.readline, ""):
             callback(line)
 
     def cancel(self, force: bool = False) -> bool:
@@ -107,5 +109,5 @@ class PipRunner:
                 self.cancelled = True
                 self.process.terminate()
             return True
-        except Exception:
+        except OSError:
             return False

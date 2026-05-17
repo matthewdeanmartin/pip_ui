@@ -2,29 +2,29 @@
 
 from __future__ import annotations
 
+import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from typing import Optional
 
 
-def confirm_dialog(parent: tk.Widget, title: str, message: str) -> bool:
+def confirm_dialog(parent: tk.Misc, title: str, message: str) -> bool:
     return messagebox.askyesno(title, message, parent=parent)
 
 
-def error_dialog(parent: tk.Widget, title: str, message: str) -> None:
+def error_dialog(parent: tk.Misc, title: str, message: str) -> None:
     messagebox.showerror(title, message, parent=parent)
 
 
-def info_dialog(parent: tk.Widget, title: str, message: str) -> None:
+def info_dialog(parent: tk.Misc, title: str, message: str) -> None:
     messagebox.showinfo(title, message, parent=parent)
 
 
 def save_file_dialog(
-    parent: tk.Widget,
+    parent: tk.Misc,
     title: str,
     default_name: str,
     filetypes: list[tuple[str, str]],
-) -> Optional[str]:
+) -> str | None:
     path = filedialog.asksaveasfilename(
         parent=parent,
         title=title,
@@ -35,8 +35,8 @@ def save_file_dialog(
     return path if path else None
 
 
-def browse_interpreter_dialog(parent: tk.Widget) -> Optional[str]:
-    if tk.sys.platform == "win32":
+def browse_interpreter_dialog(parent: tk.Misc) -> str | None:
+    if sys.platform == "win32":
         filetypes = [("Python Executable", "python.exe"), ("All files", "*")]
     else:
         filetypes = [("Python Executable", "python*"), ("All files", "*")]

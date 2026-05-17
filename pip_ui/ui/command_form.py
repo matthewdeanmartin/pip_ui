@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import json
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import filedialog, simpledialog, ttk
-from typing import Any, Callable, Optional
+from typing import Any, cast
 
 from pip_ui.forms import (
     GLOBAL_OPTIONS,
@@ -15,14 +16,17 @@ from pip_ui.forms import (
 )
 from pip_ui.models import ArgSpec, CommandSpec
 from pip_ui.presets import PresetStore
+from pip_ui.runner import PipRunner
+from pip_ui.ui.dialogs import info_dialog
 
 MONO_FONT = ("Consolas", 10)
 
 
 class FieldWidget:
-    def __init__(self, arg: ArgSpec, parent: tk.Widget) -> None:
+    def __init__(self, arg: ArgSpec, parent: tk.Misc) -> None:
         self.arg = arg
-        self.var: tk.Variable
+        self.var: tk.BooleanVar | tk.StringVar
+        self.widget: tk.Widget
 
         if arg.field_type == "checkbox":
             self.var = tk.BooleanVar(value=bool(arg.default))
@@ -51,37 +55,37 @@ class FieldWidget:
     def browse_file(self) -> None:
         path = filedialog.askopenfilename(title=f"Select {self.arg.label}")
         if path:
-            self.var.set(path)
+            cast(tk.StringVar, self.var).set(path)
 
     def browse_dir(self) -> None:
         path = filedialog.askdirectory(title=f"Select {self.arg.label}")
         if path:
-            self.var.set(path)
+            cast(tk.StringVar, self.var).set(path)
 
     def get_value(self) -> Any:
         if self.arg.field_type == "checkbox":
-            return self.var.get()
-        val = self.var.get()
+            return cast(tk.BooleanVar, self.var).get()
+        val = cast(tk.StringVar, self.var).get()
         return val if val else None
 
     def set_value(self, value: Any) -> None:
         if self.arg.field_type == "checkbox":
-            self.var.set(bool(value))
+            cast(tk.BooleanVar, self.var).set(bool(value))
         else:
-            self.var.set("" if value is None else str(value))
+            cast(tk.StringVar, self.var).set("" if value is None else str(value))
 
     def reset(self) -> None:
         if self.arg.field_type == "checkbox":
-            self.var.set(bool(self.arg.default))
+            cast(tk.BooleanVar, self.var).set(bool(self.arg.default))
         elif self.arg.field_type == "dropdown":
             default = (
                 str(self.arg.default)
                 if self.arg.default is not None
                 else (self.arg.choices[0] if self.arg.choices else "")
             )
-            self.var.set(default)
+            cast(tk.StringVar, self.var).set(default)
         else:
-            self.var.set(str(self.arg.default) if self.arg.default is not None else "")
+            cast(tk.StringVar, self.var).set(str(self.arg.default) if self.arg.default is not None else "")
 
     def trace(self, callback: Callable[[], None]) -> None:
         self.var.trace_add("write", lambda *a: callback())
@@ -90,15 +94,15 @@ class FieldWidget:
 class CommandForm(ttk.Frame):
     def __init__(
         self,
-        parent: tk.Widget,
+        parent: tk.Misc,
         on_run: Callable[[list[str], str], None],
-        on_form_change: Optional[Callable[[], None]] = None,
+        on_form_change: Callable[[], None] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(parent, **kwargs)
         self.on_run = on_run
         self.on_form_change = on_form_change
-        self.spec: Optional[CommandSpec] = None
+        self.spec: CommandSpec | None = None
         self.field_widgets: list[FieldWidget] = []
         self.global_widgets: list[FieldWidget] = []
         self.raw_extra_var = tk.StringVar(value="")
@@ -146,7 +150,7 @@ class CommandForm(ttk.Frame):
         ttk.Button(btn_frame, text="Save Preset...", command=self.save_preset).pack(side=tk.LEFT, padx=2)
         ttk.Button(btn_frame, text="Load Preset...", command=self.load_preset).pack(side=tk.LEFT, padx=2)
 
-    def on_fields_configure(self, event: Any) -> None:
+    def on_fields_configure(self, _event: Any) -> None:
         self.form_canvas.configure(scrollregion=self.form_canvas.bbox("all"))
 
     def on_canvas_configure(self, event: Any) -> None:
@@ -233,11 +237,9 @@ class CommandForm(ttk.Frame):
         return argv
 
     def update_preview(self) -> None:
-        from pip_ui.runner import PipRunner
-
         argv = self.get_argv()
         runner = PipRunner()
-        shell_str = runner.format_command(["python", "-m", "pip"] + argv)
+        shell_str = runner.format_command(["python", "-m", "pip", *argv])
         argv_json = json.dumps(argv, indent=None)
 
         self.preview_shell.configure(state=tk.NORMAL)
@@ -276,11 +278,9 @@ class CommandForm(ttk.Frame):
         self.on_run(argv, f"{self.spec.label} (dry run)")
 
     def copy_command(self) -> None:
-        from pip_ui.runner import PipRunner
-
         argv = self.get_argv()
         runner = PipRunner()
-        text = runner.format_command(["python", "-m", "pip"] + argv)
+        text = runner.format_command(["python", "-m", "pip", *argv])
         self.clipboard_clear()
         self.clipboard_append(text)
 
@@ -302,8 +302,6 @@ class CommandForm(ttk.Frame):
             return
         names = self.presets.names_for(self.spec.name)
         if not names:
-            from pip_ui.ui.dialogs import info_dialog
-
             info_dialog(self, "No Presets", f"No saved presets for {self.spec.label}.")
             return
         win = tk.Toplevel(self)
@@ -315,7 +313,7 @@ class CommandForm(ttk.Frame):
         lb.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
 
         def apply_selected() -> None:
-            sel = lb.curselection()
+            sel = lb.curselection()  # type: ignore[no-untyped-call]
             if not sel:
                 return
             chosen = names[sel[0]]
@@ -337,7 +335,7 @@ class CommandForm(ttk.Frame):
             self.update_preview()
 
         def delete_selected() -> None:
-            sel = lb.curselection()
+            sel = lb.curselection()  # type: ignore[no-untyped-call]
             if not sel:
                 return
             chosen = names[sel[0]]

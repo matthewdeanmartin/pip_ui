@@ -4,17 +4,20 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, Optional
+from typing import Any
 
 from pip_ui.config_inspector import ConfigInspector
 from pip_ui.models import InterpreterInfo
+from pip_ui.ui.dialogs import error_dialog, info_dialog, save_file_dialog
+
+RECOVERABLE_UI_ERRORS = (OSError, RuntimeError, ValueError, tk.TclError)
 
 
 class ConfigView(tk.Toplevel):
     def __init__(
         self,
-        parent: tk.Widget,
-        interpreter_info: Optional[InterpreterInfo] = None,
+        parent: tk.Misc,
+        interpreter_info: InterpreterInfo | None = None,
         show_secrets: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -23,7 +26,7 @@ class ConfigView(tk.Toplevel):
         self.geometry("900x650")
         self.interpreter_info = interpreter_info
         self.show_secrets = tk.BooleanVar(value=show_secrets)
-        self.inspector: Optional[ConfigInspector] = None
+        self.inspector: ConfigInspector | None = None
         if interpreter_info:
             self.inspector = ConfigInspector(interpreter_info.path)
         self.build_ui()
@@ -109,7 +112,7 @@ class ConfigView(tk.Toplevel):
                 self.add_section("Config Files", "\n".join(lines))
             else:
                 self.add_section("Config Files", "(none reported by pip config debug)")
-        except Exception as exc:
+        except RECOVERABLE_UI_ERRORS as exc:
             self.add_section("Config Files", f"Error: {exc}")
 
         try:
@@ -119,7 +122,7 @@ class ConfigView(tk.Toplevel):
             else:
                 content = "(no configuration values)"
             self.add_section("Active Config Values", content)
-        except Exception as exc:
+        except RECOVERABLE_UI_ERRORS as exc:
             self.add_section("Active Config Values", f"Error: {exc}")
 
         try:
@@ -154,7 +157,7 @@ class ConfigView(tk.Toplevel):
                 )
             if warnings:
                 self.add_section("Index Warnings", "\n".join(f"- {w}" for w in warnings), warning=True)
-        except Exception as exc:
+        except RECOVERABLE_UI_ERRORS as exc:
             self.add_section("Index Settings", f"Error: {exc}")
 
         try:
@@ -164,7 +167,7 @@ class ConfigView(tk.Toplevel):
             else:
                 content = "(no relevant environment variables)"
             self.add_section("Environment Variables", content)
-        except Exception as exc:
+        except RECOVERABLE_UI_ERRORS as exc:
             self.add_section("Environment Variables", f"Error: {exc}")
 
         try:
@@ -172,7 +175,7 @@ class ConfigView(tk.Toplevel):
             cache_info = self.inspector.run_cache_info()
             cache_text = f"Cache directory: {cache_dir or '(unknown)'}\n\n{cache_info or ''}"
             self.add_section("Cache", cache_text.strip())
-        except Exception as exc:
+        except RECOVERABLE_UI_ERRORS as exc:
             self.add_section("Cache", f"Error: {exc}")
 
         try:
@@ -180,22 +183,19 @@ class ConfigView(tk.Toplevel):
             lines = [f"{k} = {v or '(unset)'}" for k, v in venv.items()]
             lines.append(f"Detected as venv: {info.is_venv}")
             self.add_section("Virtual Environment", "\n".join(lines))
-        except Exception as exc:
+        except RECOVERABLE_UI_ERRORS as exc:
             self.add_section("Virtual Environment", f"Error: {exc}")
 
         try:
             config_debug = self.inspector.run_config_debug()
             self.add_section("Raw pip config debug Output", config_debug or "(no output)")
-        except Exception as exc:
+        except RECOVERABLE_UI_ERRORS as exc:
             self.add_section("Raw pip config debug Output", f"Error: {exc}")
 
     def export_diagnostics(self) -> None:
         if self.inspector is None:
-            from pip_ui.ui.dialogs import error_dialog
-
             error_dialog(self, "No Inspector", "No interpreter selected.")
             return
-        from pip_ui.ui.dialogs import info_dialog, save_file_dialog
 
         path = save_file_dialog(
             self,

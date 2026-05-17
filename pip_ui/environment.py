@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import os
-import subprocess
+import shutil
+import subprocess  # nosec B404
 import sys
 from pathlib import Path
-from typing import Optional
 
 from pip_ui.models import InterpreterInfo
 
@@ -27,9 +27,9 @@ class InterpreterDiscovery:
 
         cwd = Path.cwd()
         for rel in (".venv/Scripts/python.exe", ".venv/bin/python"):
-            candidate = cwd / rel
-            if candidate.exists():
-                candidates.append(str(candidate))
+            candidate_path = cwd / rel
+            if candidate_path.exists():
+                candidates.append(str(candidate_path))
 
         path_names = ["python", "python3", "python3.12", "python3.13"]
         if sys.platform == "win32":
@@ -56,23 +56,21 @@ class InterpreterDiscovery:
 
         return results
 
-    def which(self, name: str) -> Optional[str]:
-        import shutil
-
+    def which(self, name: str) -> str | None:
         return shutil.which(name)
 
-    def validate(self, path: str) -> Optional[InterpreterInfo]:
+    def validate(self, path: str) -> InterpreterInfo | None:
         if not Path(path).exists():
             return None
         try:
             result = subprocess.run(
                 [path, "-c", "import sys; print(sys.version.split()[0]); print(sys.prefix); print(sys.base_prefix)"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 text=True,
+                check=False,
                 shell=False,
                 timeout=10,
-            )
+            )  # nosec B603
             if result.returncode != 0:
                 return None
             lines = result.stdout.strip().splitlines()
@@ -81,12 +79,12 @@ class InterpreterDiscovery:
             version = lines[0].strip()
             prefix = lines[1].strip()
             base_prefix = lines[2].strip()
-        except Exception:
+        except (OSError, subprocess.SubprocessError):
             return None
 
         pip_version = self.get_pip_version(path)
         is_venv = self.is_venv(prefix, base_prefix)
-        env_type = self.detect_env_type(path, prefix, base_prefix)
+        env_type = self.detect_env_type(prefix, base_prefix)
 
         return InterpreterInfo(
             path=path,
@@ -102,24 +100,24 @@ class InterpreterDiscovery:
         try:
             result = subprocess.run(
                 [path, "-m", "pip", "--version"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 text=True,
+                check=False,
                 shell=False,
                 timeout=10,
-            )
+            )  # nosec B603
             if result.returncode == 0:
                 parts = result.stdout.strip().split()
                 if len(parts) >= 2:
                     return parts[1]
             return "unknown"
-        except Exception:
+        except (OSError, subprocess.SubprocessError):
             return "unknown"
 
     def is_venv(self, prefix: str, base_prefix: str) -> bool:
         return prefix != base_prefix
 
-    def detect_env_type(self, path: str, prefix: str, base_prefix: str) -> str:
+    def detect_env_type(self, prefix: str, base_prefix: str) -> str:
         if prefix != base_prefix:
             conda_prefix = os.environ.get("CONDA_PREFIX", "")
             if conda_prefix and Path(prefix).resolve() == Path(conda_prefix).resolve():

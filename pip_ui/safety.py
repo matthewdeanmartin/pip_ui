@@ -99,7 +99,7 @@ def collect_argv_warnings(argv: list[str]) -> list[str]:
         )
     if "--trusted-host" in argv:
         warnings.append(
-            "--trusted-host is set. pip will skip TLS validation for that host. " "Use only on networks you trust."
+            "--trusted-host is set. pip will skip TLS validation for that host. " + "Use only on networks you trust."
         )
     if "--user" in argv:
         warnings.append(
@@ -141,7 +141,7 @@ def explain_pip_error(stderr: str) -> list[str]:
         )
     if "permission denied" in lower or "errno 13" in lower:
         hints.append(
-            "Permission denied. You may be installing into a system location. Try a virtual environment " "or --user."
+            "Permission denied. You may be installing into a system location. Try a virtual environment " + "or --user."
         )
     if "ssl" in lower and ("certificate" in lower or "verify failed" in lower):
         hints.append(

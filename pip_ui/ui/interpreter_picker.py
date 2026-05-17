@@ -4,20 +4,20 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, Callable, Optional
+from typing import Any
+from collections.abc import Callable
 
 from pip_ui.environment import InterpreterDiscovery
 from pip_ui.models import InterpreterInfo
+from pip_ui.ui.dialogs import browse_interpreter_dialog, error_dialog
 
 
 class InterpreterPicker(ttk.Frame):
-    def __init__(
-        self, parent: tk.Widget, on_change: Callable[[Optional[InterpreterInfo]], None], **kwargs: Any
-    ) -> None:
+    def __init__(self, parent: tk.Misc, on_change: Callable[[InterpreterInfo | None], None], **kwargs: Any) -> None:
         super().__init__(parent, **kwargs)
         self.on_change = on_change
         self.interpreters: list[InterpreterInfo] = []
-        self.selected: Optional[InterpreterInfo] = None
+        self.selected: InterpreterInfo | None = None
         self.build_ui()
         self.refresh()
 
@@ -40,24 +40,19 @@ class InterpreterPicker(ttk.Frame):
             self.selected = self.interpreters[0]
             self.on_change(self.selected)
 
-    def on_combo_select(self, event: Any) -> None:
+    def on_combo_select(self, _event: Any) -> None:
         idx = self.combo.current()
         if 0 <= idx < len(self.interpreters):
             self.selected = self.interpreters[idx]
             self.on_change(self.selected)
 
     def browse(self) -> None:
-        from pip_ui.environment import InterpreterDiscovery
-        from pip_ui.ui.dialogs import browse_interpreter_dialog
-
         path = browse_interpreter_dialog(self)
         if not path:
             return
         discovery = InterpreterDiscovery()
         info = discovery.validate(path)
         if info is None:
-            from pip_ui.ui.dialogs import error_dialog
-
             error_dialog(self, "Invalid Interpreter", f"Could not validate Python interpreter at:\n{path}")
             return
         self.interpreters.append(info)
@@ -67,7 +62,7 @@ class InterpreterPicker(ttk.Frame):
         self.selected = info
         self.on_change(self.selected)
 
-    def get_selected(self) -> Optional[InterpreterInfo]:
+    def get_selected(self) -> InterpreterInfo | None:
         return self.selected
 
     def set_from_path(self, path: str) -> None:

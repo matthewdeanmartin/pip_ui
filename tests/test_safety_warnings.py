@@ -47,7 +47,7 @@ def test_no_warn_no_index_with_find_links():
 
 def test_no_warn_for_plain_install():
     warnings = collect_argv_warnings(["install", "requests"])
-    assert warnings == []
+    assert not warnings
 
 
 def test_contains_credentials_yes():
@@ -95,4 +95,4 @@ def test_explain_ssl():
 
 
 def test_explain_unknown_returns_empty():
-    assert explain_pip_error("some completely unrelated output") == []
+    assert not explain_pip_error("some completely unrelated output")

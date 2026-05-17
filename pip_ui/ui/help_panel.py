@@ -5,9 +5,10 @@ from __future__ import annotations
 import json
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, Optional
+from typing import Any
 
 from pip_ui.models import CommandSpec, InterpreterInfo, SafetyLevel
+from pip_ui.runner import PipRunner
 from pip_ui.safety import check_global_install, classify_command, collect_argv_warnings
 
 SAFETY_LABELS = {
@@ -100,10 +101,10 @@ TROUBLESHOOTING: dict[str, str] = {
 
 
 class HelpPanel(ttk.Frame):
-    def __init__(self, parent: tk.Widget, **kwargs: Any) -> None:
+    def __init__(self, parent: tk.Misc, **kwargs: Any) -> None:
         super().__init__(parent, **kwargs)
-        self.spec: Optional[CommandSpec] = None
-        self.interpreter_info: Optional[InterpreterInfo] = None
+        self.spec: CommandSpec | None = None
+        self.interpreter_info: InterpreterInfo | None = None
         self.build_ui()
 
     def build_ui(self) -> None:
@@ -137,7 +138,7 @@ class HelpPanel(ttk.Frame):
         self,
         spec: CommandSpec,
         argv: list[str],
-        interpreter_info: Optional[InterpreterInfo] = None,
+        interpreter_info: InterpreterInfo | None = None,
     ) -> None:
         self.spec = spec
         self.interpreter_info = interpreter_info
@@ -147,8 +148,6 @@ class HelpPanel(ttk.Frame):
             f"{spec.label}\n\n{spec.description}\n\n"
             f"Safety: {SAFETY_LABELS.get(spec.safety_level, str(spec.safety_level))}",
         )
-
-        from pip_ui.runner import PipRunner
 
         runner = PipRunner()
         python = interpreter_info.path if interpreter_info else "python"

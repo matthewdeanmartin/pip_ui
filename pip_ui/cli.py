@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import sys
 
 from pip_ui.__about__ import __version__
 
 
 def main() -> None:
+    """Parse CLI arguments and launch the GUI or diagnostics mode."""
     parser = argparse.ArgumentParser(
         prog="pip-ui",
         description="A Tkinter GUI for pip. Runs commands via: python -m pip",
@@ -52,9 +54,7 @@ def main() -> None:
         run_diagnostics(args.interpreter)
         return
 
-    try:
-        import tkinter as tk
-    except ImportError:
+    if importlib.util.find_spec("tkinter") is None:
         print(
             "Error: Tkinter is not available in this Python installation.\n"
             "On Debian/Ubuntu: sudo apt-get install python3-tk\n"
@@ -65,7 +65,7 @@ def main() -> None:
         )
         sys.exit(1)
 
-    from pip_ui.ui.main_window import MainWindow
+    from pip_ui.ui.main_window import MainWindow  # pylint: disable=import-outside-toplevel
 
     app = MainWindow(
         no_history=args.no_history,
@@ -82,7 +82,8 @@ def main() -> None:
 
 
 def run_diagnostics(interpreter_path: str | None) -> None:
-    from pip_ui.environment import InterpreterDiscovery
+    """Print a diagnostics report for the selected or default interpreter."""
+    from pip_ui.environment import InterpreterDiscovery  # pylint: disable=import-outside-toplevel
 
     discovery = InterpreterDiscovery()
     interpreters = discovery.discover()
@@ -99,7 +100,7 @@ def run_diagnostics(interpreter_path: str | None) -> None:
         print("No Python interpreters found.", file=sys.stderr)
         sys.exit(1)
 
-    from pip_ui.config_inspector import ConfigInspector
+    from pip_ui.config_inspector import ConfigInspector  # pylint: disable=import-outside-toplevel
 
     inspector = ConfigInspector(target.path)
     report = inspector.build_diagnostics_report("markdown")

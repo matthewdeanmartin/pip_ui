@@ -1,6 +1,5 @@
 """Tests for safety module."""
 
-
 from pip_ui.models import InterpreterInfo, SafetyLevel
 from pip_ui.safety import (
     check_global_install,

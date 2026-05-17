@@ -5,13 +5,12 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from pip_ui.models import HistoryEntry
 
 
 class CommandHistory:
-    def __init__(self, data_dir: Optional[Path] = None) -> None:
+    def __init__(self, data_dir: Path | None = None) -> None:
         self.data_dir = data_dir if data_dir is not None else Path.home() / ".pip_ui"
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.history_file = self.data_dir / "history.jsonl"

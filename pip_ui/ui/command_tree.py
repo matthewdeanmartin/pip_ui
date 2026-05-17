@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 from pip_ui.command_specs import COMMAND_GROUPS, get_commands_by_group
 
@@ -68,7 +69,7 @@ class CommandTree(ttk.Frame):
     def filter_commands(self) -> None:
         self.populate_tree(self.search_var.get())
 
-    def on_tree_select(self, event: Any) -> None:
+    def on_tree_select(self, _event: Any) -> None:
         selection = self.tree.selection()
         if not selection:
             return

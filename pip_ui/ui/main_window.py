@@ -6,8 +6,7 @@ import os
 import queue
 import tkinter as tk
 from datetime import datetime
-from tkinter import ttk
-from typing import Optional
+from tkinter import filedialog, ttk
 
 from pip_ui.__about__ import __version__
 from pip_ui.command_specs import COMMAND_SPECS
@@ -25,6 +24,7 @@ from pip_ui.safety import (
 from pip_ui.settings import AppSettings
 from pip_ui.ui.command_form import CommandForm
 from pip_ui.ui.command_tree import CommandTree
+from pip_ui.ui.config_view import ConfigView
 from pip_ui.ui.dialogs import confirm_dialog, error_dialog, info_dialog
 from pip_ui.ui.help_panel import HelpPanel
 from pip_ui.ui.interpreter_picker import InterpreterPicker
@@ -42,10 +42,14 @@ class MainWindow(tk.Tk):
         self.runner = PipRunner()
         self.output_queue: queue.Queue[tuple[str, str]] = queue.Queue()
         self.done_queue: queue.Queue[int] = queue.Queue()
-        self.current_interpreter: Optional[InterpreterInfo] = None
-        self.run_start_time: Optional[datetime] = None
+        self.current_interpreter: InterpreterInfo | None = None
+        self.run_start_time: datetime | None = None
         self.last_run_argv: list[str] = []
-        self.last_run_exit: Optional[int] = None
+        self.last_run_exit: int | None = None
+        self.run_pip_args: list[str] = []
+        self.run_label = ""
+        self.run_redacted_argv: list[str] = []
+        self.run_full_argv: list[str] = []
         self.stderr_buffer: list[str] = []
 
         self.show_secrets = tk.BooleanVar(value=bool(self.settings.get("show_secrets", False)))
@@ -121,8 +125,8 @@ class MainWindow(tk.Tk):
         self.help_panel = HelpPanel(self.horizontal_paned)
         self.horizontal_paned.add(self.help_panel, weight=0)
 
-        self.after(100, lambda: self.horizontal_paned.sashpos(0, 200))
-        self.after(100, lambda: self.horizontal_paned.sashpos(1, self.winfo_width() - 250))
+        self.after(100, lambda: self.set_sash_position(0, 200))
+        self.after(100, lambda: self.set_sash_position(1, self.winfo_width() - 250))
 
     def build_status_bar(self) -> None:
         status_bar = ttk.Frame(self, relief=tk.SUNKEN, borderwidth=1)
@@ -142,7 +146,7 @@ class MainWindow(tk.Tk):
     def on_show_secrets_toggle(self) -> None:
         self.settings.set("show_secrets", bool(self.show_secrets.get()))
 
-    def on_interpreter_change(self, info: Optional[InterpreterInfo]) -> None:
+    def on_interpreter_change(self, info: InterpreterInfo | None) -> None:
         self.current_interpreter = info
         if info:
             self.status_interpreter_var.set(f"{info.path} ({info.version}, pip {info.pip_version})")
@@ -151,9 +155,10 @@ class MainWindow(tk.Tk):
             if self.command_form.spec is not None:
                 self.help_panel.update_for_command(self.command_form.spec, self.command_form.get_argv(), info)
 
-    def browse_workdir(self) -> None:
-        from tkinter import filedialog
+    def set_sash_position(self, index: int, position: int) -> None:
+        self.horizontal_paned.sashpos(index, position)  # type: ignore[no-untyped-call]
 
+    def browse_workdir(self) -> None:
         path = filedialog.askdirectory(title="Select Working Directory")
         if path:
             self.workdir_var.set(path)
@@ -336,8 +341,6 @@ class MainWindow(tk.Tk):
             self.history.add(entry)
 
     def show_config_view(self) -> None:
-        from pip_ui.ui.config_view import ConfigView
-
         ConfigView(self, interpreter_info=self.current_interpreter, show_secrets=bool(self.show_secrets.get()))
 
     def show_about(self) -> None:
@@ -351,11 +354,11 @@ class MainWindow(tk.Tk):
         try:
             focused = self.focus_get()
             if focused and hasattr(focused, "selection_get"):
-                text = focused.selection_get()
+                text = focused.selection_get()  # type: ignore[no-untyped-call]
                 self.clipboard_clear()
                 self.clipboard_append(text)
-        except Exception:
-            pass
+        except tk.TclError:
+            self.bell()
 
     def copy_command(self) -> None:
         if self.command_form.spec is None:
