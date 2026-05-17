@@ -27,16 +27,16 @@ from pip_ui.safety import (
 )
 from pip_ui.self_update import UpgradeInfo, check_latest_version
 from pip_ui.settings import AppSettings
+from pip_ui.ui.cert_tester import CertTesterDialog
 from pip_ui.ui.command_form import CommandForm, default_global_values
 from pip_ui.ui.command_tree import CommandTree
 from pip_ui.ui.config_view import ConfigView
 from pip_ui.ui.dialogs import confirm_dialog, error_dialog, info_dialog
 from pip_ui.ui.global_options_dialog import GlobalOptionsDialog
 from pip_ui.ui.help_panel import HelpPanel
+from pip_ui.ui.index_selector import IndexSelector
 from pip_ui.ui.interpreter_picker import InterpreterPicker
 from pip_ui.ui.output_panel import OutputPanel
-from pip_ui.ui.cert_tester import CertTesterDialog
-from pip_ui.ui.index_selector import IndexSelector
 from pip_ui.ui.proxy_dialog import ProxyDialog
 from pip_ui.ui.requirements_picker import RequirementsPicker
 

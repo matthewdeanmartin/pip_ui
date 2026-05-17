@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import sys
 import tkinter as tk
-from tkinter import filedialog
-from tkinter import messagebox
+from tkinter import filedialog, messagebox
 from typing import cast
 
 import pytest

@@ -344,7 +344,7 @@ class CommandForm(ttk.Frame):
             "result = subprocess.run(",
             f"    [{items}],",
             "    capture_output=True,",
-            '    text=True,',
+            "    text=True,",
             "    check=False,",
             ")",
             "print(result.stdout)",

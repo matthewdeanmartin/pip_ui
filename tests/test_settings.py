@@ -6,8 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from pip_ui.settings import AppSettings
-from pip_ui.settings import DEFAULTS
+from pip_ui.settings import DEFAULTS, AppSettings
 
 
 def _patch_home(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

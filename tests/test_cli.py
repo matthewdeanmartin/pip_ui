@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import importlib.util
 import sys
-from types import ModuleType
-from types import SimpleNamespace
-from typing import Any
-from typing import cast
+from types import ModuleType, SimpleNamespace
+from typing import Any, cast
 
 import pytest
 

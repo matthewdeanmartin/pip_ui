@@ -5,8 +5,7 @@ from __future__ import annotations
 import runpy
 import sys
 from types import ModuleType
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
 import pytest
 

@@ -58,10 +58,7 @@ class ProxyDialog(tk.Toplevel):
         ).pack(anchor=tk.W)
         ttk.Label(
             header,
-            text=(
-                "Configure or test a proxy server for pip. "
-                "Format: scheme://[user:password@]host:port"
-            ),
+            text=("Configure or test a proxy server for pip. " "Format: scheme://[user:password@]host:port"),
             wraplength=560,
             foreground="gray",
             justify=tk.LEFT,
@@ -142,6 +139,7 @@ class ProxyDialog(tk.Toplevel):
             if v:
                 # Redact password portion for display.
                 import re
+
                 v_display = re.sub(r"(://)[^:@/\s]+:[^@/\s]+@", r"\1<redacted>:<redacted>@", v)
                 lines.append(f"{k}={v_display}")
         return "\n".join(lines)
@@ -154,6 +152,7 @@ class ProxyDialog(tk.Toplevel):
 
     def _check_credentials(self, url: str) -> bool:
         import re
+
         return bool(re.search(r"://[^:@/\s]+:[^@/\s]+@", url))
 
     # --------------------------------------------------------------- actions
@@ -162,6 +161,7 @@ class ProxyDialog(tk.Toplevel):
         proxy = self._proxy_var.get().strip()
         if self._check_credentials(proxy):
             from pip_ui.ui.dialogs import confirm_dialog
+
             ok = confirm_dialog(
                 self,
                 "Credentials in proxy URL",

@@ -11,10 +11,7 @@ import urllib.request
 import pytest
 
 from pip_ui import self_update
-from pip_ui.self_update import UpgradeInfo
-from pip_ui.self_update import fetch_latest_version
-from pip_ui.self_update import is_newer
-from pip_ui.self_update import parse_version
+from pip_ui.self_update import UpgradeInfo, fetch_latest_version, is_newer, parse_version
 
 
 def test_parse_version_simple() -> None:

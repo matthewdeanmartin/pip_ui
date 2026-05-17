@@ -3,17 +3,16 @@
 from __future__ import annotations
 
 import tkinter as tk
-from types import SimpleNamespace
 from tkinter import ttk
-from typing import Any
-from typing import cast
+from types import SimpleNamespace
+from typing import Any, cast
 from unittest.mock import MagicMock
 
 import pytest
 
-from pip_ui.ui import config_view as config_view_module
 from pip_ui.command_specs import COMMAND_SPECS
 from pip_ui.models import InterpreterInfo
+from pip_ui.ui import config_view as config_view_module
 from pip_ui.ui.command_form import CommandForm
 from pip_ui.ui.config_view import ConfigView
 from pip_ui.ui.global_options_dialog import GlobalOptionsDialog

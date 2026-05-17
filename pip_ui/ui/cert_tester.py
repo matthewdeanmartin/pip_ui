@@ -163,17 +163,14 @@ class CertTesterDialog(tk.Toplevel):
         if not folder or not os.path.isdir(folder):
             self._status_var.set("Enter a valid folder path first.")
             return
-        certs = [
-            str(p)
-            for p in Path(folder).iterdir()
-            if p.suffix.lower() in {".pem", ".crt", ".cer"} and p.is_file()
-        ]
+        certs = [str(p) for p in Path(folder).iterdir() if p.suffix.lower() in {".pem", ".crt", ".cer"} and p.is_file()]
         if not certs:
             self._status_var.set("No .pem/.crt/.cer files found in that folder.")
             return
         self._status_var.set(f"Scanning {len(certs)} file(s)…")
         self._status_label.config(foreground="#444")
         self._write("")
+
         # Run tests sequentially in a background thread.
         def worker() -> None:
             lines: list[str] = []
