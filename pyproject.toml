@@ -23,7 +23,7 @@ dependencies = []
 
 [project.urls]
 Repository = "https://github.com/matthewdeanmartin/pip_ui"
-Documentation = "https://pip_ui.readthedocs.io/en/latest/"
+Documentation = "https://pip-ui.readthedocs.io/en/latest/"
 Changelog = "https://github.com/matthewdeanmartin/pip_ui/blob/main/CHANGELOG.md"
 homepage = "https://github.com/matthewdeanmartin/pip_ui"
 issues = "https://github.com/matthewdeanmartin/pip_ui/issues/"
