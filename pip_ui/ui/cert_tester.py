@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import subprocess  # nosec B404
+import sys
 import threading
 import tkinter as tk
 from pathlib import Path
@@ -31,7 +32,7 @@ class CertTesterDialog(tk.Toplevel):
         self.title("HTTPS Certificate Tester")
         self.geometry("620x460")
         self.minsize(540, 380)
-        self.transient(parent.winfo_toplevel())  # type: ignore[no-untyped-call]
+        self.transient(parent.winfo_toplevel())
         self.grab_set()
         self.python_path = python_path
         self.thread: threading.Thread | None = None
@@ -42,7 +43,7 @@ class CertTesterDialog(tk.Toplevel):
     # ------------------------------------------------------------------ build
 
     def build_ui(self) -> None:
-        pad = {"padx": 10, "pady": 4}
+        pad: dict[str, Any] = {"padx": 10, "pady": 4}
 
         header = ttk.Frame(self)
         header.pack(fill=tk.X, **pad)
@@ -203,7 +204,8 @@ class CertTesterDialog(tk.Toplevel):
 
     def check_cert(self, cert_path: str) -> tuple[bool, str]:
         """Run ``pip index versions pip --cert <path>`` and return (success, output)."""
-        argv = [self.python_path, "-m", "pip", "index", "versions", "pip", "--cert", cert_path]
+        python = self.python_path or sys.executable
+        argv = [python, "-m", "pip", "index", "versions", "pip", "--cert", cert_path]
         try:
             result = subprocess.run(  # nosec B603
                 argv,

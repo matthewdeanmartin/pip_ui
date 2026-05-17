@@ -269,7 +269,7 @@ class MainWindow(tk.Tk):
             pass
         try:
             # Generic Tk fallback (e.g. macOS).
-            self.attributes("-zoomed", True)  # type: ignore[no-untyped-call]
+            self.attributes("-zoomed", True)
             return
         except tk.TclError:
             pass
@@ -296,7 +296,7 @@ class MainWindow(tk.Tk):
         ttk.Label(status_bar, textvariable=self.status_workdir_var).pack(side=tk.LEFT, padx=8)
 
     def bind_shortcuts(self) -> None:
-        self.bind("<Control-r>", lambda e: self.command_form.do_run())
+        self.bind("<Control-r>", lambda e: self.command_form.do_run() if self.command_form else None)
         self.bind("<Control-l>", lambda e: self.command_tree.focus_search())
         self.bind("<Control-q>", lambda e: self.on_close())
         self.bind("<Control-Shift-C>", lambda e: self.copy_command())
@@ -322,7 +322,7 @@ class MainWindow(tk.Tk):
             if prior is not None and prior.path != info.path:
                 self.output_cache.clear()
             # If a command is already selected, refresh it.
-            if getattr(self, "command_form", None) is not None and self.command_form.spec is not None:
+            if self.command_form is not None and self.command_form.spec is not None:
                 self.after(0, lambda: self.refresh_current_command_output())
 
     def on_requirements_change(self, path: str | None) -> None:
@@ -348,8 +348,9 @@ class MainWindow(tk.Tk):
         if spec is None:
             return
         self.stderr_buffer = []
-        self.command_form.set_command(spec)
-        self.help_panel.update_for_command(spec, self.command_form.get_argv(), self.current_interpreter)
+        if self.command_form and self.help_panel:
+            self.command_form.set_command(spec)
+            self.help_panel.update_for_command(spec, self.command_form.get_argv(), self.current_interpreter)
         self.show_output_for_command(command_name)
 
     def show_output_for_command(self, command_name: str) -> None:
@@ -368,7 +369,8 @@ class MainWindow(tk.Tk):
                 f"[auto] Running pip {command_name.replace('_', ' ')} with defaults...\n",
                 tag="hint",
             )
-            self.command_form.do_run()
+            if self.command_form:
+                self.command_form.do_run()
             return
         # Nothing to show; leave the panel empty so the user can fill the form.
         self.output_panel.clear()
@@ -384,11 +386,10 @@ class MainWindow(tk.Tk):
         return (self.current_interpreter.path, command_name)
 
     def on_form_change(self) -> None:
-        if self.command_form.spec is None:
-            return
-        self.help_panel.update_for_command(
-            self.command_form.spec, self.command_form.get_argv(), self.current_interpreter
-        )
+        if self.command_form and self.command_form.spec and self.help_panel:
+            self.help_panel.update_for_command(
+                self.command_form.spec, self.command_form.get_argv(), self.current_interpreter
+            )
 
     # ------------------------------------------------------- global options
 
@@ -427,7 +428,7 @@ class MainWindow(tk.Tk):
             error_dialog(self, "Already Running", "A pip command is already in progress. Cancel it first.")
             return
 
-        command_name = self.command_form.spec.name if self.command_form.spec else ""
+        command_name = self.command_form.spec.name if self.command_form and self.command_form.spec else ""
         self.current_run_command = command_name
         safety_level = classify_command(command_name)
 
@@ -790,9 +791,8 @@ class MainWindow(tk.Tk):
             self.bell()
 
     def copy_command(self) -> None:
-        if self.command_form.spec is None:
-            return
-        self.command_form.copy_command()
+        if self.command_form and self.command_form.spec:
+            self.command_form.copy_command()
 
     def on_close(self) -> None:
         self.settings.set("window_width", self.winfo_width())

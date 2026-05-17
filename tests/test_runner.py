@@ -4,29 +4,32 @@ from __future__ import annotations
 
 import subprocess
 import threading
+from typing import Any
+
+import pytest
 
 from pip_ui.runner import PipRunner
 
 
-def test_build_argv():
+def test_build_argv() -> None:
     runner = PipRunner()
     result = runner.build_argv("/usr/bin/python", ["install", "requests"])
     assert result == ["/usr/bin/python", "-m", "pip", "install", "requests"]
 
 
-def test_build_argv_empty_pip_args():
+def test_build_argv_empty_pip_args() -> None:
     runner = PipRunner()
     result = runner.build_argv("/usr/bin/python", [])
     assert result == ["/usr/bin/python", "-m", "pip"]
 
 
-def test_redact_argv_no_credentials():
+def test_redact_argv_no_credentials() -> None:
     argv = ["/usr/bin/python", "-m", "pip", "install", "--index-url", "https://pypi.org/simple"]
     result = PipRunner.redact_argv(argv)
     assert result == argv
 
 
-def test_redact_argv_with_credentials():
+def test_redact_argv_with_credentials() -> None:
     argv = ["/usr/bin/python", "-m", "pip", "install", "--index-url", "https://user:pass@pypi.example.com/simple"]
     result = PipRunner.redact_argv(argv)
     assert "user" not in result[5]
@@ -34,13 +37,13 @@ def test_redact_argv_with_credentials():
     assert "<redacted>:<redacted>@" in result[5]
 
 
-def test_redact_argv_preserves_safe_args():
+def test_redact_argv_preserves_safe_args() -> None:
     argv = ["python", "-m", "pip", "list", "--format", "json"]
     result = PipRunner.redact_argv(argv)
     assert result == argv
 
 
-def test_format_command():
+def test_format_command() -> None:
     runner = PipRunner()
     argv = ["/usr/bin/python", "-m", "pip", "install", "requests"]
     result = runner.format_command(argv)
@@ -50,20 +53,20 @@ def test_format_command():
     assert "requests" in result
 
 
-def test_format_command_quotes_spaces():
+def test_format_command_quotes_spaces() -> None:
     runner = PipRunner()
     argv = ["python", "-m", "pip", "install", "some package"]
     result = runner.format_command(argv)
     assert '"some package"' in result
 
 
-def test_cancel_no_process():
+def test_cancel_no_process() -> None:
     runner = PipRunner()
     runner.cancel()
 
 
-def test_run_uses_utf8_defaults(monkeypatch) -> None:
-    captured: dict[str, object] = {}
+def test_run_uses_utf8_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, Any] = {}
     done = threading.Event()
 
     class FakeStream:
@@ -71,7 +74,7 @@ def test_run_uses_utf8_defaults(monkeypatch) -> None:
             return ""
 
     class FakePopen:
-        def __init__(self, *args: object, **kwargs: object) -> None:
+        def __init__(self, *args: object, **kwargs: Any) -> None:
             captured.update(kwargs)
             self.stdout = FakeStream()
             self.stderr = FakeStream()
@@ -80,7 +83,7 @@ def test_run_uses_utf8_defaults(monkeypatch) -> None:
         def __enter__(self) -> FakePopen:
             return self
 
-        def __exit__(self, exc_type, exc, tb) -> None:
+        def __exit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
             return None
 
         def poll(self) -> int | None:

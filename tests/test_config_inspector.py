@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from typing import Any
 
 import pytest
 
@@ -94,9 +95,9 @@ def test_detect_index_info_reads_env_values(monkeypatch: pytest.MonkeyPatch) -> 
 
 
 def test_run_pip_command_uses_utf8_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
-    captured: dict[str, object] = {}
+    captured: dict[str, Any] = {}
 
-    def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+    def fake_run(*args: object, **kwargs: Any) -> subprocess.CompletedProcess[str]:
         captured.update(kwargs)
         return subprocess.CompletedProcess(args=["python"], returncode=0, stdout="{}", stderr="")
 

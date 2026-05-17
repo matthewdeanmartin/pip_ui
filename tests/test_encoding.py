@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections.abc import MutableMapping
 from typing import cast
 
+import pytest
+
 from pip_ui.encoding import (
     UTF8_ENCODING,
     UTF8_OUTPUT_ERRORS,
@@ -41,7 +43,7 @@ def test_utf8_subprocess_kwargs_include_encoding_and_env() -> None:
     assert kwargs["env"]["PYTHONIOENCODING"] == UTF8_ENCODING
 
 
-def test_configure_utf8_stdio_reconfigures_output_streams(monkeypatch) -> None:
+def test_configure_utf8_stdio_reconfigures_output_streams(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[tuple[str, str, str]] = []
 
     class FakeStream:

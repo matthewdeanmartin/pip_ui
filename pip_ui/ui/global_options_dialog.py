@@ -29,7 +29,7 @@ class GlobalOptionsDialog(tk.Toplevel):
     ) -> None:
         super().__init__(parent, **kwargs)
         self.title("Global Options")
-        self.transient(parent.winfo_toplevel())  # type: ignore[no-untyped-call]
+        self.transient(parent.winfo_toplevel())
         self.on_apply = on_apply
         self.result: dict[str, Any] | None = None
         self.vars: dict[str, tk.BooleanVar | tk.StringVar] = {}
@@ -96,7 +96,7 @@ class GlobalOptionsDialog(tk.Toplevel):
 
             def browse(
                 field_kind: str = kind,
-                target: tk.StringVar = cast(tk.StringVar, var),  # noqa:B008
+                target: tk.StringVar = var,
                 label: str = arg.label,
             ) -> None:
                 if field_kind == "file":

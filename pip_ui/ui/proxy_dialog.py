@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 import subprocess  # nosec B404
+import sys
 import threading
 import tkinter as tk
 from tkinter import ttk
@@ -35,7 +36,7 @@ class ProxyDialog(tk.Toplevel):
         self.title("HTTP Proxy Configuration")
         self.geometry("600x500")
         self.minsize(520, 420)
-        self.transient(parent.winfo_toplevel())  # type: ignore[no-untyped-call]
+        self.transient(parent.winfo_toplevel())
         self.grab_set()
         self.python_path = python_path
         self.on_apply = on_apply
@@ -192,7 +193,8 @@ class ProxyDialog(tk.Toplevel):
         self.write("")
 
         def worker() -> None:
-            argv = [self.python_path, "-m", "pip", "index", "versions", "pip", "--proxy", proxy]
+            python = self.python_path or sys.executable
+            argv = [python, "-m", "pip", "index", "versions", "pip", "--proxy", proxy]
             try:
                 result = subprocess.run(  # nosec B603
                     argv,

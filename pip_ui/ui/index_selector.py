@@ -132,7 +132,7 @@ class IndexSelector(ttk.Frame):
         win = tk.Toplevel(self)
         win.title("Manage Custom Indexes")
         win.geometry("560x320")
-        win.transient(self.winfo_toplevel())  # type: ignore[no-untyped-call]
+        win.transient(self.winfo_toplevel())
         win.grab_set()
 
         ttk.Label(win, text="Custom package indexes (name → URL)").pack(anchor=tk.W, padx=8, pady=(8, 2))
