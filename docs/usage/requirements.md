@@ -1,6 +1,6 @@
 # Picking Requirements
 
-`pip-ui` provides two ways to manage requirements files, making it easy to work with multiple projects or complex installation workflows.
+`pip-ui-tkinter` provides two ways to manage requirements files, making it easy to work with multiple projects or complex installation workflows.
 
 ## Global Requirements File
 

@@ -1,11 +1,11 @@
-# pip_ui
+# pip-ui-tkinter
 
 <!-- TODO (generated from template — delete this block once done)
   - [ ] Replace this description with a real one-paragraph summary
   - [ ] Update pyproject.toml [project] keywords with real search terms
   - [ ] Update pyproject.toml classifiers Development Status (3-Alpha → 4-Beta → 5-Production)
   - [ ] Update pyproject.toml description (shown on PyPI)
-  - [ ] Add a PyPI badge: https://badge.fury.io/py/pip_ui
+  - [ ] Add a PyPI badge: https://badge.fury.io/py/pip-ui-tkinter
   - [ ] Add a CI badge from your GitHub Actions build.yml
   - [ ] Fill in docs/overview/README.md with a real project overview
   - [ ] Add real subcommands to pip_ui/cli.py and update scripts/basic_checks.sh
@@ -18,24 +18,24 @@
   - [ ] Update CHANGELOG.md 0.1.0 entry with real release notes
 -->
 
-A pip UI tool
+A Tkinter-based UI for pip
 
 ## Installation
 
 ```bash
-pipx install pip_ui
+pipx install pip-ui-tkinter
 ```
 
 Or with pip:
 
 ```bash
-pip install pip_ui
+pip install pip-ui-tkinter
 ```
 
 ## Usage
 
 ```bash
-pip_ui --help
+pip-ui-tkinter --help
 ```
 
 ## Contributing

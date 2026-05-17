@@ -1,6 +1,6 @@
 # Configuration & Editors
 
-Understanding where `pip` gets its settings is crucial for troubleshooting. `pip-ui` provides tools to inspect and edit your configuration safely.
+Understanding where `pip` gets its settings is crucial for troubleshooting. `pip-ui-tkinter` provides tools to inspect and edit your configuration safely.
 
 ## Configuration Dashboard
 
@@ -18,8 +18,8 @@ The `config_edit` command allows you to open your `pip` configuration file in an
 
 ### Editor Opener
 
-When you run `config_edit`, `pip-ui` invokes `pip config edit`.
-- **Windows:** If no editor is configured in your environment (via `EDITOR` or `VISUAL` variables), `pip-ui` defaults to `notepad.exe` to ensure the file opens successfully.
+When you run `config_edit`, `pip-ui-tkinter` invokes `pip config edit`.
+- **Windows:** If no editor is configured in your environment (via `EDITOR` or `VISUAL` variables), `pip-ui-tkinter` defaults to `notepad.exe` to ensure the file opens successfully.
 - **POSIX:** It relies on your system's default editor configuration.
 
 ## Exporting Diagnostics

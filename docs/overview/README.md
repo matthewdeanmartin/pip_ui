@@ -1,6 +1,6 @@
 # Overview
 
-`pip-ui` is a visual wrapper around the `pip` command-line tool. It helps you discover, preview, and run `pip` commands without having to remember every flag and argument.
+`pip-ui-tkinter` is a visual wrapper around the `pip` command-line tool. It helps you discover, preview, and run `pip` commands without having to remember every flag and argument.
 
 ## Key Goals
 
@@ -19,4 +19,4 @@
 
 ## No Internal Dependencies
 
-`pip-ui` does not import or modify `pip` internals. It interacts with `pip` strictly via subprocesses (e.g., `python -m pip install ...`), ensuring that it remains compatible with any version of `pip` installed in your environment.
+`pip-ui-tkinter` does not import or modify `pip` internals. It interacts with `pip` strictly via subprocesses (e.g., `python -m pip install ...`), ensuring that it remains compatible with any version of `pip` installed in your environment.

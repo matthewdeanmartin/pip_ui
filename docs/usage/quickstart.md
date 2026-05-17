@@ -1,13 +1,13 @@
 # Quick Start
 
-Getting started with `pip-ui` is straightforward.
+Getting started with `pip-ui-tkinter` is straightforward.
 
 ## Launching the App
 
 Once installed, you can start the GUI from your terminal:
 
 ```bash
-pip-ui
+pip-ui-tkinter
 ```
 
 Or, if you prefer to run it as a module:
@@ -18,7 +18,7 @@ python -m pip_ui
 
 ## Basic Workflow
 
-1. **Select an Interpreter:** Use the toolbar at the top to pick which Python environment you want to manage. `pip-ui` will show the active `pip` version for that environment.
+1. **Select an Interpreter:** Use the toolbar at the top to pick which Python environment you want to manage. `pip-ui-tkinter` will show the active `pip` version for that environment.
 2. **Choose a Command:** Select a command (like `install` or `list`) from the left-hand navigator.
 3. **Fill the Form:** Enter package names, select files, or toggle options in the middle panel.
 4. **Preview the Command:** Watch the "Command Preview" area update in real-time.

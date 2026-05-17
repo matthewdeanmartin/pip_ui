@@ -3,13 +3,13 @@
 ## Recommended (pipx)
 
 ```bash
-pipx install pip_ui
+pipx install pip-ui-tkinter
 ```
 
 ## pip
 
 ```bash
-pip install pip_ui
+pip install pip-ui-tkinter
 ```
 
 ## From source

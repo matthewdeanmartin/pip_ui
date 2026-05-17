@@ -1,6 +1,6 @@
 # Presets
 
-`pip-ui` allows you to save and load **Presets**, a feature not available in standard `pip`. Presets are perfect for complex commands that you run frequently.
+`pip-ui-tkinter` allows you to save and load **Presets**, a feature not available in standard `pip`. Presets are perfect for complex commands that you run frequently.
 
 ## Saving a Preset
 

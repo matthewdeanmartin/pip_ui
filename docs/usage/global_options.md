@@ -1,6 +1,6 @@
 # Global Options
 
-`pip` supports many global flags that affect the behavior of almost every command. `pip-ui` provides a dedicated dialog for managing these settings to keep individual command forms clean and focused.
+`pip` supports many global flags that affect the behavior of almost every command. `pip-ui-tkinter` provides a dedicated dialog for managing these settings to keep individual command forms clean and focused.
 
 ## Accessing Global Options
 
