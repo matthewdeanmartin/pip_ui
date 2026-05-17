@@ -1,10 +1,10 @@
 [project]
-name = "pip_ui"
+name = "pip-ui-tkinter"
 version = "0.1.0"
 description = "A pip UI tool"
 readme = "README.md"
 authors = [{ name = "Matthew Martin", email = "matthewdeanmartin@gmail.com" }]
-keywords = ["pip_ui", "pip"]
+keywords = ["pip-ui-tkinter", "pip"]
 license = "MIT"
 requires-python = ">=3.10"
 classifiers = [
@@ -31,7 +31,7 @@ issues = "https://github.com/matthewdeanmartin/pip_ui/issues/"
 [project.scripts]
 pip_ui = "pip_ui.cli:main"
 pip-ui = "pip_ui.cli:main"
-
+pip-ui-tkinter = "pip_ui.cli:main"
 
 [build-system]
 requires = ["hatchling>=1.27.0"]
