@@ -1,5 +1,9 @@
 """Smoke tests for the CLI entry point."""
 
+import pytest
+
+pytest.importorskip("tkinter")
+
 from types import SimpleNamespace
 
 import pip_ui

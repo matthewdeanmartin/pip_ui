@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import pytest
+
+pytest.importorskip("tkinter")
+
 from pip_ui.ui.command_form import default_global_values
 from pip_ui.ui.global_options_dialog import summarize_globals
 

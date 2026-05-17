@@ -19,6 +19,10 @@ nav:
   - Installation: installation.md
   - Usage:
       - Quick Start: usage/quickstart.md
+      - Picking Requirements: usage/requirements.md
+      - Global Options: usage/global_options.md
+      - Configuration & Editors: usage/configuration.md
+      - Presets: usage/presets.md
   - Contributing: extending/CONTRIBUTING.md
   - Change Log: CHANGELOG.md
 validation:
