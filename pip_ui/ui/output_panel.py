@@ -1,0 +1,134 @@
+"""Output panel with tabbed stdout/stderr/combined view."""
+
+from __future__ import annotations
+
+import json
+import tkinter as tk
+from tkinter import ttk
+from typing import Any, Optional
+
+MONO_FONT = ("Consolas", 10)
+
+
+class OutputPanel(ttk.Frame):
+    def __init__(self, parent: tk.Widget, **kwargs: Any) -> None:
+        super().__init__(parent, **kwargs)
+        self.build_ui()
+
+    def build_ui(self) -> None:
+        toolbar = ttk.Frame(self)
+        toolbar.pack(side=tk.TOP, fill=tk.X, padx=4, pady=2)
+
+        ttk.Button(toolbar, text="Copy All", command=self.copy_all).pack(side=tk.LEFT, padx=2)
+        ttk.Button(toolbar, text="Save...", command=self.save_output).pack(side=tk.LEFT, padx=2)
+        ttk.Button(toolbar, text="Clear", command=self.clear).pack(side=tk.LEFT, padx=2)
+
+        ttk.Label(toolbar, text="Search:").pack(side=tk.LEFT, padx=(8, 2))
+        self.search_var = tk.StringVar()
+        search_entry = ttk.Entry(toolbar, textvariable=self.search_var, width=20)
+        search_entry.pack(side=tk.LEFT, padx=2)
+        search_entry.bind("<Return>", lambda e: self.search_output())
+        ttk.Button(toolbar, text="Find", command=self.search_output).pack(side=tk.LEFT, padx=2)
+
+        self.notebook = ttk.Notebook(self)
+        self.notebook.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+
+        self.combined_text = self.make_text_tab("Combined")
+        self.stdout_text = self.make_text_tab("stdout")
+        self.stderr_text = self.make_text_tab("stderr")
+        self.info_text = self.make_text_tab("Command Info")
+
+        self.stderr_text.tag_configure("stderr", foreground="red")
+
+        self.bind_all("<Control-f>", lambda e: self.focus_search())
+
+    def make_text_tab(self, label: str) -> tk.Text:
+        frame = ttk.Frame(self.notebook)
+        self.notebook.add(frame, text=label)
+        scrollbar = ttk.Scrollbar(frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        text = tk.Text(
+            frame,
+            wrap=tk.WORD,
+            font=MONO_FONT,
+            yscrollcommand=scrollbar.set,
+            state=tk.DISABLED,
+        )
+        text.pack(fill=tk.BOTH, expand=True)
+        scrollbar.config(command=text.yview)
+        return text
+
+    def append_to(self, widget: tk.Text, text: str, tag: Optional[str] = None) -> None:
+        widget.configure(state=tk.NORMAL)
+        if tag:
+            widget.insert(tk.END, text, tag)
+        else:
+            widget.insert(tk.END, text)
+        widget.see(tk.END)
+        widget.configure(state=tk.DISABLED)
+
+    def append_stdout(self, text: str) -> None:
+        self.append_to(self.stdout_text, text)
+        self.append_to(self.combined_text, text)
+
+    def append_stderr(self, text: str) -> None:
+        self.append_to(self.stderr_text, text, "stderr")
+        self.append_to(self.combined_text, text)
+
+    def set_command_info(self, info_dict: dict[str, Any]) -> None:
+        self.info_text.configure(state=tk.NORMAL)
+        self.info_text.delete("1.0", tk.END)
+        for key, value in info_dict.items():
+            self.info_text.insert(tk.END, f"{key}: {value}\n")
+        self.info_text.configure(state=tk.DISABLED)
+
+    def clear(self) -> None:
+        for widget in (self.combined_text, self.stdout_text, self.stderr_text, self.info_text):
+            widget.configure(state=tk.NORMAL)
+            widget.delete("1.0", tk.END)
+            widget.configure(state=tk.DISABLED)
+
+    def copy_all(self) -> None:
+        active_tab = self.notebook.index(self.notebook.select())
+        widgets = [self.combined_text, self.stdout_text, self.stderr_text, self.info_text]
+        widget = widgets[active_tab]
+        content = widget.get("1.0", tk.END)
+        self.clipboard_clear()
+        self.clipboard_append(content)
+
+    def save_output(self) -> None:
+        from pip_ui.ui.dialogs import save_file_dialog
+        path = save_file_dialog(
+            self,
+            title="Save Output",
+            default_name="pip_output.txt",
+            filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+        )
+        if path:
+            active_tab = self.notebook.index(self.notebook.select())
+            widgets = [self.combined_text, self.stdout_text, self.stderr_text, self.info_text]
+            widget = widgets[active_tab]
+            content = widget.get("1.0", tk.END)
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write(content)
+
+    def focus_search(self) -> None:
+        pass
+
+    def search_output(self) -> None:
+        term = self.search_var.get()
+        if not term:
+            return
+        active_tab = self.notebook.index(self.notebook.select())
+        widgets = [self.combined_text, self.stdout_text, self.stderr_text, self.info_text]
+        widget = widgets[active_tab]
+        widget.tag_remove("search", "1.0", tk.END)
+        widget.tag_configure("search", background="yellow")
+        start = "1.0"
+        while True:
+            pos = widget.search(term, start, stopindex=tk.END)
+            if not pos:
+                break
+            end = f"{pos}+{len(term)}c"
+            widget.tag_add("search", pos, end)
+            start = end
