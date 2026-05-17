@@ -67,6 +67,7 @@ dev = [
     "pytest-sugar>=0.9.7",
     "pytest-mock>=3.14.0",
     "pytest-timeout>=2.4.0",
+    "pytest-xvfb>=3.0.0",
     "hypothesis>=6.100.0",
     "ruff>=0.12.0",
     "troml-dev-status>=0.6.0",

@@ -23,7 +23,10 @@ from pip_ui.ui.requirements_picker import RequirementsPicker
 @pytest.fixture(scope="module")
 def root():
     """Provides a headless Tk root for testing widgets."""
-    root = tk.Tk()
+    try:
+        root = tk.Tk()
+    except tk.TclError as e:
+        pytest.skip(f"Tkinter initialize failed (likely headless): {e}")
     root.withdraw()
     yield root
     root.destroy()
