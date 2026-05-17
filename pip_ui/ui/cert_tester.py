@@ -19,6 +19,31 @@ from typing import Any
 from pip_ui.encoding import utf8_subprocess_kwargs
 
 LABEL_TESTING = "Testing…"
+
+
+def run_cert_check(python_path: str, cert_path: str) -> tuple[bool, str]:
+    """Run ``pip index versions pip --cert <path>`` and return (success, output).
+
+    Extracted for testability — does not touch Tk state.
+    """
+    argv = [python_path, "-m", "pip", "index", "versions", "pip", "--cert", cert_path]
+    try:
+        result = subprocess.run(  # nosec B603
+            argv,
+            capture_output=True,
+            timeout=20,
+            check=False,
+            shell=False,
+            **utf8_subprocess_kwargs(),
+        )
+        combined = (result.stdout + result.stderr).strip()
+        return result.returncode == 0, combined or "(no output)"
+    except subprocess.TimeoutExpired:
+        return False, "Timed out after 20 seconds."
+    except OSError as exc:
+        return False, f"Error: {exc}"
+
+
 LABEL_OK = "✔  Certificate works"
 LABEL_FAIL = "✗  Certificate failed"
 LABEL_READY = "Select a certificate to test."
@@ -203,24 +228,8 @@ class CertTesterDialog(tk.Toplevel):
         self.thread.start()
 
     def check_cert(self, cert_path: str) -> tuple[bool, str]:
-        """Run ``pip index versions pip --cert <path>`` and return (success, output)."""
         python = self.python_path or sys.executable
-        argv = [python, "-m", "pip", "index", "versions", "pip", "--cert", cert_path]
-        try:
-            result = subprocess.run(  # nosec B603
-                argv,
-                capture_output=True,
-                timeout=20,
-                check=False,
-                shell=False,
-                **utf8_subprocess_kwargs(),
-            )
-            combined = (result.stdout + result.stderr).strip()
-            return result.returncode == 0, combined or "(no output)"
-        except subprocess.TimeoutExpired:
-            return False, "Timed out after 20 seconds."
-        except Exception as exc:
-            return False, f"Error: {exc}"
+        return run_cert_check(python, cert_path)
 
     # ----------------------------------------------------------------- polling
 

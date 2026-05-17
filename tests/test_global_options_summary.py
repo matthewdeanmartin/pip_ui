@@ -6,12 +6,12 @@ import pytest
 
 pytest.importorskip("tkinter")
 
-from pip_ui.ui.command_form import default_global_values
-from pip_ui.ui.global_options_dialog import summarize_globals
+from pip_ui.ui.command_form import default_global_values  # pylint: disable=wrong-import-position
+from pip_ui.ui.global_options_dialog import summarize_globals  # pylint: disable=wrong-import-position
 
 
 def test_summary_empty_when_all_defaults() -> None:
-    assert summarize_globals(default_global_values()) == []
+    assert not summarize_globals(default_global_values())
 
 
 def test_summary_shows_enabled_boolean() -> None:

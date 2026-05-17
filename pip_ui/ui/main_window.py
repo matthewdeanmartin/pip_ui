@@ -32,7 +32,7 @@ from pip_ui.ui.command_form import CommandForm, default_global_values
 from pip_ui.ui.command_tree import CommandTree
 from pip_ui.ui.config_view import ConfigView
 from pip_ui.ui.dialogs import confirm_dialog, error_dialog, info_dialog
-from pip_ui.ui.global_options_dialog import GlobalOptionsDialog
+from pip_ui.ui.global_options_dialog import GlobalOptionsDialog, summarize_globals
 from pip_ui.ui.help_panel import HelpPanel
 from pip_ui.ui.index_selector import IndexSelector
 from pip_ui.ui.interpreter_picker import InterpreterPicker
@@ -323,7 +323,7 @@ class MainWindow(tk.Tk):
                 self.output_cache.clear()
             # If a command is already selected, refresh it.
             if self.command_form is not None and self.command_form.spec is not None:
-                self.after(0, lambda: self.refresh_current_command_output())
+                self.after(0, self.refresh_current_command_output)
 
     def on_requirements_change(self, path: str | None) -> None:
         self.global_requirements_file = path
@@ -409,8 +409,6 @@ class MainWindow(tk.Tk):
             self.command_form.update_preview()
 
     def refresh_global_options_summary(self) -> None:
-        from pip_ui.ui.global_options_dialog import summarize_globals
-
         chips = summarize_globals(self.global_options)
         if not chips:
             self.global_options_summary_var.set("(globals: defaults)")

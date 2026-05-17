@@ -267,7 +267,7 @@ def test_run_diagnostics_warns_and_falls_back_when_validation_fails(
         def discover(self) -> list[InterpreterInfo]:
             return [interpreter]
 
-        def validate(self, interpreter_path: str) -> InterpreterInfo | None:
+        def validate(self, interpreter_path: str) -> InterpreterInfo | None:  # pylint: disable=useless-return
             seen["validated"] = interpreter_path
             return None
 

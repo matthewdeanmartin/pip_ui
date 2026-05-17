@@ -74,7 +74,7 @@ def test_run_uses_utf8_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
             return ""
 
     class FakePopen:
-        def __init__(self, *args: object, **kwargs: Any) -> None:
+        def __init__(self, *_args: object, **kwargs: Any) -> None:
             captured.update(kwargs)
             self.stdout = FakeStream()
             self.stderr = FakeStream()

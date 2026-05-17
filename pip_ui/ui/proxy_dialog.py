@@ -6,7 +6,6 @@ Helps corporate users set up --proxy for pip.  Shows what is currently active
 
 from __future__ import annotations
 
-import os
 import subprocess  # nosec B404
 import sys
 import threading
@@ -15,6 +14,8 @@ from tkinter import ttk
 from typing import Any
 
 from pip_ui.encoding import utf8_subprocess_kwargs
+from pip_ui.ui.dialogs import confirm_dialog
+from pip_ui.ui.proxy_utils import proxy_env_summary, url_contains_credentials
 
 LABEL_TESTING = "Testing…"
 LABEL_OK = "✔  Proxy works"
@@ -90,9 +91,12 @@ class ProxyDialog(tk.Toplevel):
 
         hint = ttk.Frame(entry_frame)
         hint.pack(fill=tk.X, padx=4, pady=(0, 4))
+        tip = (
+            "Tip: use http://proxy.corp.example.com:8080 — avoid embedding passwords here;" " use a netrc file instead."
+        )
         ttk.Label(
             hint,
-            text="Tip: use http://proxy.corp.example.com:8080 — avoid embedding passwords here; use a netrc file instead.",
+            text=tip,
             foreground="gray",
             wraplength=540,
             justify=tk.LEFT,
@@ -133,17 +137,7 @@ class ProxyDialog(tk.Toplevel):
     # ---------------------------------------------------------------- helpers
 
     def read_proxy_env(self) -> str:
-        keys = ["HTTPS_PROXY", "HTTP_PROXY", "https_proxy", "http_proxy", "NO_PROXY", "no_proxy"]
-        lines: list[str] = []
-        for k in keys:
-            v = os.environ.get(k)
-            if v:
-                # Redact password portion for display.
-                import re
-
-                v_display = re.sub(r"(://)[^:@/\s]+:[^@/\s]+@", r"\1<redacted>:<redacted>@", v)
-                lines.append(f"{k}={v_display}")
-        return "\n".join(lines)
+        return proxy_env_summary()
 
     def write(self, text: str) -> None:
         self.output.configure(state=tk.NORMAL)
@@ -152,17 +146,13 @@ class ProxyDialog(tk.Toplevel):
         self.output.configure(state=tk.DISABLED)
 
     def check_credentials(self, url: str) -> bool:
-        import re
-
-        return bool(re.search(r"://[^:@/\s]+:[^@/\s]+@", url))
+        return url_contains_credentials(url)
 
     # --------------------------------------------------------------- actions
 
     def apply(self) -> None:
         proxy = self.proxy_var.get().strip()
         if self.check_credentials(proxy):
-            from pip_ui.ui.dialogs import confirm_dialog
-
             ok = confirm_dialog(
                 self,
                 "Credentials in proxy URL",
@@ -208,7 +198,7 @@ class ProxyDialog(tk.Toplevel):
                 self.result_queue.append((result.returncode == 0, combined or "(no output)"))
             except subprocess.TimeoutExpired:
                 self.result_queue.append((False, "Timed out after 20 seconds."))
-            except Exception as exc:
+            except OSError as exc:
                 self.result_queue.append((False, f"Error: {exc}"))
 
         self.thread = threading.Thread(target=worker, daemon=True)

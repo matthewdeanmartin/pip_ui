@@ -47,4 +47,4 @@ def test_heuristic_rejects_arbitrary_prose(tmp_path: Path) -> None:
 
 def test_returns_empty_for_missing_directory(tmp_path: Path) -> None:
     missing = tmp_path / "does_not_exist"
-    assert detect_candidates(missing) == []
+    assert not detect_candidates(missing)
