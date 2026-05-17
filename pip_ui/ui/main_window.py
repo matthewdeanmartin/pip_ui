@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import os
 import queue
 import sys
@@ -174,9 +175,7 @@ class MainWindow(tk.Tk):
         toolbar2 = ttk.Frame(self, relief=tk.GROOVE, borderwidth=1)
         toolbar2.pack(side=tk.TOP, fill=tk.X, padx=2, pady=(0, 2))
 
-        self.requirements_picker = RequirementsPicker(
-            toolbar2, on_change=self.on_requirements_change
-        )
+        self.requirements_picker = RequirementsPicker(toolbar2, on_change=self.on_requirements_change)
         self.requirements_picker.pack(side=tk.LEFT, padx=4)
 
         ttk.Button(
@@ -186,9 +185,7 @@ class MainWindow(tk.Tk):
         ).pack(side=tk.LEFT, padx=4)
 
         self.global_options_summary_var = tk.StringVar(value="(globals: defaults)")
-        ttk.Label(toolbar2, textvariable=self.global_options_summary_var, foreground="#444").pack(
-            side=tk.LEFT, padx=4
-        )
+        ttk.Label(toolbar2, textvariable=self.global_options_summary_var, foreground="#444").pack(side=tk.LEFT, padx=4)
 
     def build_upgrade_banner(self) -> None:
         # Coloured strip; only visible when text is set.
@@ -205,8 +202,7 @@ class MainWindow(tk.Tk):
 
     def show_upgrade_banner(self, info: UpgradeInfo) -> None:
         self.upgrade_banner_var.set(
-            f"⚡ pip-ui {info.latest} is available (you have {info.current}). "
-            "Use Tools → Upgrade pip-ui to install."
+            f"⚡ pip-ui {info.latest} is available (you have {info.current}). " "Use Tools → Upgrade pip-ui to install."
         )
         self.upgrade_banner.pack(side=tk.TOP, fill=tk.X)
 
@@ -260,10 +256,8 @@ class MainWindow(tk.Tk):
         except tk.TclError:
             pass
         # Last resort: size to the screen.
-        try:
+        with contextlib.suppress(tk.TclError):
             self.geometry(f"{self.winfo_screenwidth()}x{self.winfo_screenheight()}+0+0")
-        except tk.TclError:
-            pass
 
     def apply_initial_sash_positions(self) -> None:
         self.update_idletasks()
@@ -350,11 +344,7 @@ class MainWindow(tk.Tk):
             self.output_panel.restore(self.output_cache[cache_key])
             return
         # No cache yet. For read-only commands that need nothing, run with defaults.
-        if (
-            cache_key is not None
-            and command_name in self.autorun_on_select
-            and self.current_interpreter is not None
-        ):
+        if cache_key is not None and command_name in self.autorun_on_select and self.current_interpreter is not None:
             self.output_panel.clear()
             self.output_panel.append_combined(
                 f"[auto] Running pip {command_name.replace('_', ' ')} with defaults...\n",
@@ -406,7 +396,7 @@ class MainWindow(tk.Tk):
         if not chips:
             self.global_options_summary_var.set("(globals: defaults)")
         else:
-            shown = chips if len(chips) <= 3 else chips[:3] + [f"+{len(chips) - 3} more"]
+            shown = chips if len(chips) <= 3 else [*chips[:3], f"+{len(chips) - 3} more"]
             self.global_options_summary_var.set("globals: " + ", ".join(shown))
 
     # -------------------------------------------------------------- runners

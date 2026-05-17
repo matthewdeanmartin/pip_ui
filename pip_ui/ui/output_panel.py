@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import ttk
 from typing import Any, cast
-from collections.abc import Callable
 
 from pip_ui.ui.dialogs import save_file_dialog
 

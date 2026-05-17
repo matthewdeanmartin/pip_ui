@@ -94,7 +94,11 @@ class GlobalOptionsDialog(tk.Toplevel):
             entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
             kind = arg.field_type
 
-            def browse(field_kind: str = kind, target: tk.StringVar = cast(tk.StringVar, var), label: str = arg.label) -> None:
+            def browse(
+                field_kind: str = kind,
+                target: tk.StringVar = cast(tk.StringVar, var),  # noqa:B008
+                label: str = arg.label,
+            ) -> None:
                 if field_kind == "file":
                     path = filedialog.askopenfilename(parent=self, title=f"Select {label}")
                 else:

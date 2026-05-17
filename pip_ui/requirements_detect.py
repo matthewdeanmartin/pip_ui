@@ -53,9 +53,7 @@ def detect_candidates(directory: Path) -> list[RequirementsCandidate]:
         for path in sorted(directory.glob(pattern)):
             if path.is_file() and path not in seen:
                 seen.add(path)
-                results.append(
-                    RequirementsCandidate(path=path, label=path.name, kind="requirements")
-                )
+                results.append(RequirementsCandidate(path=path, label=path.name, kind="requirements"))
 
     # 2. Heuristically inspect other .txt files.
     for path in sorted(directory.glob("*.txt")):
@@ -63,16 +61,12 @@ def detect_candidates(directory: Path) -> list[RequirementsCandidate]:
             continue
         if looks_like_requirements(path):
             seen.add(path)
-            results.append(
-                RequirementsCandidate(path=path, label=f"{path.name} (heuristic)", kind="heuristic")
-            )
+            results.append(RequirementsCandidate(path=path, label=f"{path.name} (heuristic)", kind="heuristic"))
 
     # 3. pyproject.toml — pip supports `-e .` against it.
     pyproject = directory / "pyproject.toml"
     if pyproject.is_file():
-        results.append(
-            RequirementsCandidate(path=pyproject, label="pyproject.toml", kind="pyproject")
-        )
+        results.append(RequirementsCandidate(path=pyproject, label="pyproject.toml", kind="pyproject"))
 
     return results
 

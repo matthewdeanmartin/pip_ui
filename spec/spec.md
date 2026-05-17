@@ -9,7 +9,7 @@ Package/distribution name: `pip-ui`
 Import package name: `pip_ui`
 Console entry point: `pip-ui`
 
----
+______________________________________________________________________
 
 ## 0. No "Hungarian" notation for "private"
 
@@ -24,47 +24,47 @@ You may use _ to mean unused, e.g. for unpacking, interface-like things.
 The application has a three-panel layout:
 
 1. **Left panel:** command navigator.
-2. **Middle panel:** command-specific form and command output.
-3. **Right panel:** contextual help, generated command preview, configuration explanation, and safety notes.
+1. **Middle panel:** command-specific form and command output.
+1. **Right panel:** contextual help, generated command preview, configuration explanation, and safety notes.
 
 A major focus of `pip-ui` is surfacing `pip` configuration: where config files are, which values are active, which index URLs are in effect, which environment variables affect pip, which Python interpreter is being used, and why pip is behaving the way it is.
 
 `pip-ui` must be useful to beginners without hiding the actual command being run. Every action should show the equivalent CLI command.
 
----
+______________________________________________________________________
 
 ## 2. Goals
 
 ### 2.1 Primary goals
 
-* Provide a graphical interface for all major `pip` commands.
-* Run pip through subprocess using the selected Python interpreter.
-* Make pip configuration visible, inspectable, and explainable.
-* Show users exactly which command will run before it runs.
-* Support multiple Python interpreters and virtual environments.
-* Keep command execution transparent and reproducible.
-* Avoid relying on pip private APIs.
-* Provide good copy/paste support for commands, logs, diagnostics, and reports.
-* Be safe by default: prefer dry runs, previews, and explicit confirmation for destructive actions.
+- Provide a graphical interface for all major `pip` commands.
+- Run pip through subprocess using the selected Python interpreter.
+- Make pip configuration visible, inspectable, and explainable.
+- Show users exactly which command will run before it runs.
+- Support multiple Python interpreters and virtual environments.
+- Keep command execution transparent and reproducible.
+- Avoid relying on pip private APIs.
+- Provide good copy/paste support for commands, logs, diagnostics, and reports.
+- Be safe by default: prefer dry runs, previews, and explicit confirmation for destructive actions.
 
 ### 2.2 Secondary goals
 
-* Teach users how pip works by surfacing generated commands and help text.
-* Help troubleshoot common pip issues: wrong interpreter, wrong venv, unexpected index URL, cached packages, proxy settings, config precedence, SSL/certificate problems, and permissions.
-* Provide an approachable UI for users who are uncomfortable with the terminal.
-* Provide a useful diagnostic export for bug reports, support desks, and CI debugging.
+- Teach users how pip works by surfacing generated commands and help text.
+- Help troubleshoot common pip issues: wrong interpreter, wrong venv, unexpected index URL, cached packages, proxy settings, config precedence, SSL/certificate problems, and permissions.
+- Provide an approachable UI for users who are uncomfortable with the terminal.
+- Provide a useful diagnostic export for bug reports, support desks, and CI debugging.
 
 ### 2.3 Non-goals
 
-* Do not reimplement pip’s resolver.
-* Do not parse or edit lockfiles beyond viewing relevant project files.
-* Do not become a full Python project manager.
-* Do not become a replacement for Poetry, uv, PDM, Hatch, or Conda.
-* Do not silently modify project files unless the user selected an explicit write action.
-* Do not depend on importing pip internals.
-* Do not manage non-pip package ecosystems except by displaying relevant environment hints.
+- Do not reimplement pip’s resolver.
+- Do not parse or edit lockfiles beyond viewing relevant project files.
+- Do not become a full Python project manager.
+- Do not become a replacement for Poetry, uv, PDM, Hatch, or Conda.
+- Do not silently modify project files unless the user selected an explicit write action.
+- Do not depend on importing pip internals.
+- Do not manage non-pip package ecosystems except by displaying relevant environment hints.
 
----
+______________________________________________________________________
 
 ## 3. Design principles
 
@@ -96,20 +96,20 @@ This avoids the common problem where `pip` and `python` refer to different insta
 
 The application should make configuration obvious:
 
-* Which config files exist.
-* Which config files do not exist.
-* Which values are active.
-* Which values came from files, environment variables, command-line options, or defaults.
-* Which index URLs and trusted hosts are currently in effect.
-* Which cache directory is active.
-* Which proxy settings are active.
-* Which virtual environment is active.
+- Which config files exist.
+- Which config files do not exist.
+- Which values are active.
+- Which values came from files, environment variables, command-line options, or defaults.
+- Which index URLs and trusted hosts are currently in effect.
+- Which cache directory is active.
+- Which proxy settings are active.
+- Which virtual environment is active.
 
 ### 3.5 Safer than a terminal by default
 
 Commands that install, uninstall, upgrade, or alter state should require a deliberate action. Destructive commands should show a confirmation dialog.
 
----
+______________________________________________________________________
 
 ## 4. Target users
 
@@ -129,7 +129,7 @@ Users operating behind proxies, internal PyPI mirrors, custom certificate author
 
 Users who need to show students what pip is doing, troubleshoot installations, and produce consistent diagnostics.
 
----
+______________________________________________________________________
 
 ## 5. Application architecture
 
@@ -182,13 +182,13 @@ Responsible for subprocess execution.
 
 Responsibilities:
 
-* Build command argument arrays.
-* Invoke selected Python interpreter with `-m pip`.
-* Stream stdout and stderr to the UI.
-* Capture exit codes.
-* Support cancellation where possible.
-* Record command history.
-* Avoid shell invocation unless explicitly required.
+- Build command argument arrays.
+- Invoke selected Python interpreter with `-m pip`.
+- Stream stdout and stderr to the UI.
+- Capture exit codes.
+- Support cancellation where possible.
+- Record command history.
+- Avoid shell invocation unless explicitly required.
 
 #### `command_specs.py`
 
@@ -196,10 +196,10 @@ Declarative command metadata.
 
 Responsibilities:
 
-* Define pip commands and options.
-* Map options to form widgets.
-* Provide help text, examples, and safety levels.
-* Determine which commands support dry-run or report output.
+- Define pip commands and options.
+- Map options to form widgets.
+- Provide help text, examples, and safety levels.
+- Determine which commands support dry-run or report output.
 
 #### `config_inspector.py`
 
@@ -207,13 +207,13 @@ Responsible for pip configuration discovery.
 
 Responsibilities:
 
-* Run `pip config debug`.
-* Run `pip config list`.
-* Run `pip debug`.
-* Inspect relevant environment variables.
-* Locate config files.
-* Parse display-friendly summaries.
-* Avoid relying on pip internals.
+- Run `pip config debug`.
+- Run `pip config list`.
+- Run `pip debug`.
+- Inspect relevant environment variables.
+- Locate config files.
+- Parse display-friendly summaries.
+- Avoid relying on pip internals.
 
 #### `environment.py`
 
@@ -221,12 +221,12 @@ Responsible for Python interpreter and environment discovery.
 
 Responsibilities:
 
-* Detect current interpreter.
-* Detect virtual environments.
-* Detect common project venv folders.
-* Detect Windows launcher availability where applicable.
-* Detect PATH-visible Python commands.
-* Validate interpreter by running `python -c` probes and `python -m pip --version`.
+- Detect current interpreter.
+- Detect virtual environments.
+- Detect common project venv folders.
+- Detect Windows launcher availability where applicable.
+- Detect PATH-visible Python commands.
+- Validate interpreter by running `python -c` probes and `python -m pip --version`.
 
 #### `forms.py`
 
@@ -234,9 +234,9 @@ Builds Tkinter forms from command specs.
 
 Responsibilities:
 
-* Render fields for flags, values, paths, package names, indexes, requirements files, and output formats.
-* Validate required inputs.
-* Convert form state into subprocess arguments.
+- Render fields for flags, values, paths, package names, indexes, requirements files, and output formats.
+- Validate required inputs.
+- Convert form state into subprocess arguments.
 
 #### `history.py`
 
@@ -244,12 +244,12 @@ Stores local command history.
 
 Responsibilities:
 
-* Persist command history in an app data file.
-* Allow replaying previous commands.
-* Allow copying commands and outputs.
-* Avoid storing secrets by default.
+- Persist command history in an app data file.
+- Allow replaying previous commands.
+- Allow copying commands and outputs.
+- Avoid storing secrets by default.
 
----
+______________________________________________________________________
 
 ## 6. Subprocess execution model
 
@@ -299,11 +299,11 @@ The middle output panel must stream output while the process runs.
 
 Output panel tabs:
 
-* **Combined output**
-* **stdout**
-* **stderr**
-* **Command metadata**
-* **JSON/report output**, when available
+- **Combined output**
+- **stdout**
+- **stderr**
+- **Command metadata**
+- **JSON/report output**, when available
 
 ### 6.4 Cancellation
 
@@ -311,36 +311,36 @@ The UI should provide a **Cancel** button while a command is running.
 
 Expected behavior:
 
-* Try graceful termination first.
-* Escalate to process kill only after user confirmation.
-* Clearly report whether cancellation was successful.
+- Try graceful termination first.
+- Escalate to process kill only after user confirmation.
+- Clearly report whether cancellation was successful.
 
 ### 6.5 Exit status
 
 After every command, show:
 
-* Exit code.
-* Start time.
-* End time.
-* Duration.
-* Interpreter path.
-* Working directory.
-* Full argument array.
+- Exit code.
+- Start time.
+- End time.
+- Duration.
+- Interpreter path.
+- Working directory.
+- Full argument array.
 
 ### 6.6 Secrets handling
 
 Potential secrets include:
 
-* Index URLs containing credentials.
-* Proxy URLs containing credentials.
-* Environment variables containing tokens.
-* Private repository URLs.
+- Index URLs containing credentials.
+- Proxy URLs containing credentials.
+- Environment variables containing tokens.
+- Private repository URLs.
 
 The UI must redact credentials in display by default, while still using the actual values when executing commands.
 
 Provide a toggle: **Show sensitive values**.
 
----
+______________________________________________________________________
 
 ## 7. Main window layout
 
@@ -368,86 +368,95 @@ The left panel contains a tree or grouped list of commands.
 
 Suggested groups:
 
-* **Packages**
+- **Packages**
 
-  * Install
-  * Uninstall
-  * List
-  * Show
-  * Freeze
-  * Check
-  * Inspect
-* **Index and search**
+  - Install
+  - Uninstall
+  - List
+  - Show
+  - Freeze
+  - Check
+  - Inspect
 
-  * Index versions
-* **Requirements and reports**
+- **Index and search**
 
-  * Install from requirements
-  * Download
-  * Wheel
-  * Lock
-* **Environment diagnostics**
+  - Index versions
 
-  * Version
-  * Debug
-  * Help
-* **Configuration**
+- **Requirements and reports**
 
-  * Config list
-  * Config debug
-  * Config get
-  * Config set
-  * Config unset
-  * Config edit
-* **Cache**
+  - Install from requirements
+  - Download
+  - Wheel
+  - Lock
 
-  * Cache dir
-  * Cache info
-  * Cache list
-  * Cache remove
-  * Cache purge
+- **Environment diagnostics**
+
+  - Version
+  - Debug
+  - Help
+
+- **Configuration**
+
+  - Config list
+  - Config debug
+  - Config get
+  - Config set
+  - Config unset
+  - Config edit
+
+- **Cache**
+
+  - Cache dir
+  - Cache info
+  - Cache list
+  - Cache remove
+  - Cache purge
 
 The command navigator should include a search box.
 
 Example search terms:
 
-* `install`
-* `requirements`
-* `proxy`
-* `cache`
-* `config`
-* `index-url`
-* `venv`
-* `debug`
+- `install`
+- `requirements`
+- `proxy`
+- `cache`
+- `config`
+- `index-url`
+- `venv`
+- `debug`
 
 ### 7.3 Middle panel: form and output
 
 The middle panel contains two stacked areas:
 
 1. Command form.
-2. Output notebook.
+1. Output notebook.
 
 The form changes depending on the selected command.
 
 Each form should include:
 
-* Command title.
-* Short description.
-* Inputs and options.
-* Generated command preview.
-* Buttons:
+- Command title.
 
-  * **Run**
-  * **Copy command**
-  * **Reset form**
-  * **Save as preset**
-  * **Load preset**
+- Short description.
+
+- Inputs and options.
+
+- Generated command preview.
+
+- Buttons:
+
+  - **Run**
+  - **Copy command**
+  - **Reset form**
+  - **Save as preset**
+  - **Load preset**
 
 Commands with safe preview modes should include:
 
-* **Dry run**
-* **Generate report only**
-* **Do not modify environment**
+- **Dry run**
+- **Generate report only**
+- **Do not modify environment**
 
 ### 7.4 Right panel: help and context
 
@@ -455,22 +464,22 @@ The right panel contains contextual information.
 
 Tabs:
 
-* **Help**
-* **Generated command**
-* **Active config**
-* **Safety**
-* **Examples**
-* **Troubleshooting**
+- **Help**
+- **Generated command**
+- **Active config**
+- **Safety**
+- **Examples**
+- **Troubleshooting**
 
 The right panel should update when:
 
-* Command selection changes.
-* Form values change.
-* Interpreter selection changes.
-* Config refresh is run.
-* A command succeeds or fails.
+- Command selection changes.
+- Form values change.
+- Interpreter selection changes.
+- Config refresh is run.
+- A command succeeds or fails.
 
----
+______________________________________________________________________
 
 ## 8. Interpreter and environment selection
 
@@ -480,12 +489,12 @@ A top toolbar should contain the selected Python interpreter.
 
 Display:
 
-* Interpreter path.
-* Python version.
-* Pip version.
-* Environment type.
-* Whether it appears to be a virtual environment.
-* Working directory.
+- Interpreter path.
+- Python version.
+- Pip version.
+- Environment type.
+- Whether it appears to be a virtual environment.
+- Working directory.
 
 Example:
 
@@ -501,20 +510,26 @@ Working directory: C:\repos\demo
 
 Discovery sources:
 
-* Current `sys.executable`.
-* Active virtual environment, if any.
-* `.venv` in current working directory.
-* `venv` in current working directory.
-* Common Windows Python launcher results, if available.
-* PATH-visible names:
+- Current `sys.executable`.
 
-  * `python`
-  * `python3`
-  * `python3.14`
-  * `python3.13`
-  * `python3.12`
-  * `py`, on Windows when available.
-* User-selected interpreter path.
+- Active virtual environment, if any.
+
+- `.venv` in current working directory.
+
+- `venv` in current working directory.
+
+- Common Windows Python launcher results, if available.
+
+- PATH-visible names:
+
+  - `python`
+  - `python3`
+  - `python3.14`
+  - `python3.13`
+  - `python3.12`
+  - `py`, on Windows when available.
+
+- User-selected interpreter path.
 
 ### 8.3 Interpreter validation
 
@@ -534,9 +549,9 @@ This interpreter exists, but pip is not available for it.
 
 Offer actions:
 
-* Run `ensurepip`, when available.
-* Pick a different interpreter.
-* Show diagnostic details.
+- Run `ensurepip`, when available.
+- Pick a different interpreter.
+- Show diagnostic details.
 
 ### 8.4 Working directory
 
@@ -544,15 +559,15 @@ The user can select a working directory.
 
 The working directory matters for:
 
-* Local project files.
-* `requirements.txt`.
-* `pyproject.toml`.
-* Editable installs.
-* Relative paths.
-* Local wheels.
-* Config file discovery context.
+- Local project files.
+- `requirements.txt`.
+- `pyproject.toml`.
+- Editable installs.
+- Relative paths.
+- Local wheels.
+- Config file discovery context.
 
----
+______________________________________________________________________
 
 ## 9. Command coverage
 
@@ -561,8 +576,8 @@ The working directory matters for:
 Because pip evolves, the app should combine:
 
 1. A built-in command specification for known commands.
-2. Dynamic help discovery from `pip help` and `pip <command> --help`.
-3. A generic fallback form for unknown or newly added commands.
+1. Dynamic help discovery from `pip help` and `pip <command> --help`.
+1. A generic fallback form for unknown or newly added commands.
 
 ### 9.1 Global pip options
 
@@ -570,25 +585,25 @@ Global options should be available in an expandable **Advanced** section for eve
 
 Common global options:
 
-* `--isolated`
-* `--require-virtualenv`
-* `--python`
-* `--verbose`
-* `--quiet`
-* `--log`
-* `--no-input`
-* `--proxy`
-* `--retries`
-* `--timeout`
-* `--exists-action`
-* `--trusted-host`
-* `--cert`
-* `--client-cert`
-* `--cache-dir`
-* `--no-cache-dir`
-* `--disable-pip-version-check`
-* `--no-color`
-* `--no-python-version-warning`
+- `--isolated`
+- `--require-virtualenv`
+- `--python`
+- `--verbose`
+- `--quiet`
+- `--log`
+- `--no-input`
+- `--proxy`
+- `--retries`
+- `--timeout`
+- `--exists-action`
+- `--trusted-host`
+- `--cert`
+- `--client-cert`
+- `--cache-dir`
+- `--no-cache-dir`
+- `--disable-pip-version-check`
+- `--no-color`
+- `--no-python-version-warning`
 
 `pip-ui` should not blindly show every option at the top level. It should use progressive disclosure.
 
@@ -604,30 +619,30 @@ python -m pip install ...
 
 Form fields:
 
-* Package specifier(s).
-* Requirements file.
-* Constraints file.
-* Editable path or VCS URL.
-* Upgrade packages.
-* Upgrade strategy.
-* Force reinstall.
-* Ignore installed.
-* User install.
-* Target directory.
-* Prefix.
-* Root.
-* Dry run, if supported.
-* Report file, if supported.
-* Index options.
-* Build isolation options.
-* Binary/source options.
+- Package specifier(s).
+- Requirements file.
+- Constraints file.
+- Editable path or VCS URL.
+- Upgrade packages.
+- Upgrade strategy.
+- Force reinstall.
+- Ignore installed.
+- User install.
+- Target directory.
+- Prefix.
+- Root.
+- Dry run, if supported.
+- Report file, if supported.
+- Index options.
+- Build isolation options.
+- Binary/source options.
 
 Safety:
 
-* Warn if installing globally.
-* Warn if using `--break-system-packages`.
-* Warn if using credentials in index URLs.
-* Warn if installing from arbitrary VCS URLs.
+- Warn if installing globally.
+- Warn if using `--break-system-packages`.
+- Warn if using credentials in index URLs.
+- Warn if installing from arbitrary VCS URLs.
 
 #### Uninstall
 
@@ -639,14 +654,14 @@ python -m pip uninstall ...
 
 Form fields:
 
-* Package name(s).
-* Requirements file.
-* Auto-confirm `-y`.
+- Package name(s).
+- Requirements file.
+- Auto-confirm `-y`.
 
 Safety:
 
-* Require confirmation before uninstall.
-* Warn when uninstalling from a shared/global interpreter.
+- Require confirmation before uninstall.
+- Warn when uninstalling from a shared/global interpreter.
 
 #### List
 
@@ -658,19 +673,19 @@ python -m pip list ...
 
 Form fields:
 
-* Output format.
-* Outdated.
-* Uptodate.
-* Editable.
-* Not required.
-* Exclude package.
-* Include package.
+- Output format.
+- Outdated.
+- Uptodate.
+- Editable.
+- Not required.
+- Exclude package.
+- Include package.
 
 Output enhancements:
 
-* Sortable table.
-* Copy as text, JSON, CSV, Markdown.
-* Filter box.
+- Sortable table.
+- Copy as text, JSON, CSV, Markdown.
+- Filter box.
 
 #### Show
 
@@ -682,15 +697,15 @@ python -m pip show ...
 
 Form fields:
 
-* Package name(s).
-* Files mode.
+- Package name(s).
+- Files mode.
 
 Output enhancements:
 
-* Display metadata as key/value table.
-* Show location.
-* Show dependencies.
-* Show required-by.
+- Display metadata as key/value table.
+- Show location.
+- Show dependencies.
+- Show required-by.
 
 #### Freeze
 
@@ -702,17 +717,17 @@ python -m pip freeze ...
 
 Form fields:
 
-* All packages.
-* Local only.
-* Path filters.
-* Exclude editable.
-* Exclude package.
+- All packages.
+- Local only.
+- Path filters.
+- Exclude editable.
+- Exclude package.
 
 Output enhancements:
 
-* Save to `requirements.txt`.
-* Copy to clipboard.
-* Diff against existing requirements file.
+- Save to `requirements.txt`.
+- Copy to clipboard.
+- Diff against existing requirements file.
 
 #### Check
 
@@ -724,9 +739,9 @@ python -m pip check
 
 Output enhancements:
 
-* Highlight broken requirements.
-* Provide package names detected in output.
-* Offer copyable diagnostic report.
+- Highlight broken requirements.
+- Provide package names detected in output.
+- Offer copyable diagnostic report.
 
 #### Inspect
 
@@ -738,9 +753,9 @@ python -m pip inspect
 
 Output enhancements:
 
-* Render JSON as tree/table.
-* Save JSON report.
-* Show dependency graph summary.
+- Render JSON as tree/table.
+- Save JSON report.
+- Show dependency graph summary.
 
 ### 9.3 Index commands
 
@@ -754,18 +769,18 @@ python -m pip index versions <package>
 
 Form fields:
 
-* Package name.
-* Pre-releases.
-* Index URL.
-* Extra index URL.
-* No index.
-* Find links.
+- Package name.
+- Pre-releases.
+- Index URL.
+- Extra index URL.
+- No index.
+- Find links.
 
 Output enhancements:
 
-* Show available versions.
-* Mark installed version, if installed.
-* Mark latest version.
+- Show available versions.
+- Mark installed version, if installed.
+- Mark latest version.
 
 ### 9.4 Artifact commands
 
@@ -779,21 +794,21 @@ python -m pip download ...
 
 Form fields:
 
-* Package specifier(s).
-* Destination directory.
-* Requirements file.
-* Constraints file.
-* Platform.
-* Python version.
-* Implementation.
-* ABI.
-* Binary/source preferences.
-* Index options.
+- Package specifier(s).
+- Destination directory.
+- Requirements file.
+- Constraints file.
+- Platform.
+- Python version.
+- Implementation.
+- ABI.
+- Binary/source preferences.
+- Index options.
 
 Use cases:
 
-* Build an offline wheel/package cache.
-* Download without installing.
+- Build an offline wheel/package cache.
+- Download without installing.
 
 #### Wheel
 
@@ -805,16 +820,16 @@ python -m pip wheel ...
 
 Form fields:
 
-* Package specifier(s).
-* Wheel directory.
-* Requirements file.
-* Constraints file.
-* Build options.
-* Binary/source preferences.
+- Package specifier(s).
+- Wheel directory.
+- Requirements file.
+- Constraints file.
+- Build options.
+- Binary/source preferences.
 
 Use cases:
 
-* Build wheels for offline or repeatable install.
+- Build wheels for offline or repeatable install.
 
 #### Lock
 
@@ -844,9 +859,9 @@ python -m pip cache dir
 
 Display:
 
-* Cache directory path.
-* Button to open folder in system file manager.
-* Button to copy path.
+- Cache directory path.
+- Button to open folder in system file manager.
+- Button to copy path.
 
 #### Cache info
 
@@ -858,8 +873,8 @@ python -m pip cache info
 
 Display:
 
-* Parsed cache statistics when possible.
-* Raw output always available.
+- Parsed cache statistics when possible.
+- Raw output always available.
 
 #### Cache list
 
@@ -871,13 +886,13 @@ python -m pip cache list
 
 Form fields:
 
-* Pattern.
-* Format, if available.
+- Pattern.
+- Format, if available.
 
 Display:
 
-* Searchable list.
-* Copy selected path.
+- Searchable list.
+- Copy selected path.
 
 #### Cache remove
 
@@ -889,8 +904,8 @@ python -m pip cache remove <pattern>
 
 Safety:
 
-* Require confirmation.
-* Show pattern clearly.
+- Require confirmation.
+- Show pattern clearly.
 
 #### Cache purge
 
@@ -902,8 +917,8 @@ python -m pip cache purge
 
 Safety:
 
-* Require strong confirmation.
-* Explain that packages may need to be re-downloaded later.
+- Require strong confirmation.
+- Explain that packages may need to be re-downloaded later.
 
 ### 9.6 Config commands
 
@@ -919,10 +934,10 @@ python -m pip config list
 
 Display:
 
-* Key/value table.
-* Redacted secrets.
-* Filter by key.
-* Copy as text/JSON/Markdown.
+- Key/value table.
+- Redacted secrets.
+- Filter by key.
+- Copy as text/JSON/Markdown.
 
 #### Config debug
 
@@ -934,11 +949,11 @@ python -m pip config debug
 
 Display:
 
-* Config file locations.
-* Whether each file exists.
-* Values discovered in each file.
-* Environment variable impact.
-* Active environment.
+- Config file locations.
+- Whether each file exists.
+- Values discovered in each file.
+- Environment variable impact.
+- Active environment.
 
 #### Config get
 
@@ -950,8 +965,8 @@ python -m pip config get <name>
 
 Form fields:
 
-* Config key.
-* Scope.
+- Config key.
+- Scope.
 
 #### Config set
 
@@ -963,19 +978,21 @@ python -m pip config set <name> <value>
 
 Form fields:
 
-* Config key.
-* Value.
-* Scope:
+- Config key.
 
-  * global
-  * user
-  * site
+- Value.
+
+- Scope:
+
+  - global
+  - user
+  - site
 
 Safety:
 
-* Warn when setting credentials.
-* Warn when setting global config.
-* Show exact target scope.
+- Warn when setting credentials.
+- Warn when setting global config.
+- Show exact target scope.
 
 #### Config unset
 
@@ -987,8 +1004,8 @@ python -m pip config unset <name>
 
 Safety:
 
-* Require confirmation.
-* Show target scope.
+- Require confirmation.
+- Show target scope.
 
 #### Config edit
 
@@ -1002,11 +1019,11 @@ Because this may open an external editor, the UI should treat it carefully.
 
 Options:
 
-* Open config file location.
-* Show file content read-only inside the UI.
-* Launch external editor only after confirmation.
+- Open config file location.
+- Show file content read-only inside the UI.
+- Launch external editor only after confirmation.
 
----
+______________________________________________________________________
 
 ## 10. Configuration dashboard
 
@@ -1017,15 +1034,15 @@ The config dashboard is one of the defining features of `pip-ui`.
 Sections:
 
 1. **Active interpreter**
-2. **Pip version**
-3. **Config files**
-4. **Active config values**
-5. **Environment variables**
-6. **Index and repository settings**
-7. **Cache settings**
-8. **Network/proxy/certificate settings**
-9. **Virtual environment status**
-10. **Diagnostics export**
+1. **Pip version**
+1. **Config files**
+1. **Active config values**
+1. **Environment variables**
+1. **Index and repository settings**
+1. **Cache settings**
+1. **Network/proxy/certificate settings**
+1. **Virtual environment status**
+1. **Diagnostics export**
 
 ### 10.2 Config file discovery
 
@@ -1041,24 +1058,24 @@ Display config file locations reported by pip.
 
 For each file:
 
-* Path.
-* Scope.
-* Exists?
-* Readable?
-* Size.
-* Modified time.
-* Values found, if safely readable.
+- Path.
+- Scope.
+- Exists?
+- Readable?
+- Size.
+- Modified time.
+- Values found, if safely readable.
 
 ### 10.3 Config precedence explanation
 
 The dashboard should explain that pip settings may come from multiple sources, including:
 
-* Command-line options.
-* Environment variables.
-* Environment-specific config.
-* User config.
-* Global config.
-* Pip defaults.
+- Command-line options.
+- Environment variables.
+- Environment-specific config.
+- User config.
+- Global config.
+- Pip defaults.
 
 The UI should avoid overstating certainty when pip output does not explicitly reveal a final source.
 
@@ -1080,29 +1097,29 @@ Unless verified through pip output.
 
 Show relevant pip environment variables, including but not limited to:
 
-* `PIP_INDEX_URL`
-* `PIP_EXTRA_INDEX_URL`
-* `PIP_NO_INDEX`
-* `PIP_FIND_LINKS`
-* `PIP_TRUSTED_HOST`
-* `PIP_REQUIRE_VIRTUALENV`
-* `PIP_REQUIRE_HASHES`
-* `PIP_CERT`
-* `PIP_CLIENT_CERT`
-* `PIP_CACHE_DIR`
-* `PIP_NO_CACHE_DIR`
-* `PIP_CONFIG_FILE`
-* `PIP_DISABLE_PIP_VERSION_CHECK`
-* `PIP_DEFAULT_TIMEOUT`
-* `PIP_RETRIES`
-* `PIP_PROXY`
+- `PIP_INDEX_URL`
+- `PIP_EXTRA_INDEX_URL`
+- `PIP_NO_INDEX`
+- `PIP_FIND_LINKS`
+- `PIP_TRUSTED_HOST`
+- `PIP_REQUIRE_VIRTUALENV`
+- `PIP_REQUIRE_HASHES`
+- `PIP_CERT`
+- `PIP_CLIENT_CERT`
+- `PIP_CACHE_DIR`
+- `PIP_NO_CACHE_DIR`
+- `PIP_CONFIG_FILE`
+- `PIP_DISABLE_PIP_VERSION_CHECK`
+- `PIP_DEFAULT_TIMEOUT`
+- `PIP_RETRIES`
+- `PIP_PROXY`
 
 Also show related Python environment variables:
 
-* `VIRTUAL_ENV`
-* `CONDA_PREFIX`
-* `PYTHONPATH`
-* `PYTHONHOME`
+- `VIRTUAL_ENV`
+- `CONDA_PREFIX`
+- `PYTHONPATH`
+- `PYTHONHOME`
 
 Secrets must be redacted by default.
 
@@ -1110,30 +1127,30 @@ Secrets must be redacted by default.
 
 The dashboard should prominently show package source configuration:
 
-* Main index URL.
-* Extra index URLs.
-* No-index mode.
-* Find-links paths/URLs.
-* Trusted hosts.
-* Whether credentials appear to be embedded.
+- Main index URL.
+- Extra index URLs.
+- No-index mode.
+- Find-links paths/URLs.
+- Trusted hosts.
+- Whether credentials appear to be embedded.
 
 Warnings:
 
-* Credentials in URL.
-* Use of `trusted-host`.
-* HTTP instead of HTTPS.
-* Multiple indexes configured.
-* Environment variable overriding expected config.
+- Credentials in URL.
+- Use of `trusted-host`.
+- HTTP instead of HTTPS.
+- Multiple indexes configured.
+- Environment variable overriding expected config.
 
 ### 10.6 Cache analysis
 
 Show:
 
-* Active cache directory.
-* Whether caching is disabled.
-* Cache info output.
-* Cache purge controls.
-* Cache-only install hints.
+- Active cache directory.
+- Whether caching is disabled.
+- Cache info output.
+- Cache purge controls.
+- Cache-only install hints.
 
 ### 10.7 Diagnostics export
 
@@ -1141,28 +1158,28 @@ Provide a **Create diagnostics report** button.
 
 Report formats:
 
-* Markdown.
-* JSON.
-* Plain text.
+- Markdown.
+- JSON.
+- Plain text.
 
 Report contents:
 
-* OS.
-* Python executable.
-* Python version.
-* Pip version.
-* Working directory.
-* Virtual environment status.
-* Pip config debug output.
-* Pip config list output.
-* Pip debug output.
-* Relevant environment variables, redacted.
-* Last command run.
-* Last command exit code.
+- OS.
+- Python executable.
+- Python version.
+- Pip version.
+- Working directory.
+- Virtual environment status.
+- Pip config debug output.
+- Pip config list output.
+- Pip debug output.
+- Relevant environment variables, redacted.
+- Last command run.
+- Last command exit code.
 
 The report must redact secrets by default.
 
----
+______________________________________________________________________
 
 ## 11. Command form model
 
@@ -1170,17 +1187,17 @@ The report must redact secrets by default.
 
 Supported field types:
 
-* Text input.
-* Multi-value text input.
-* Checkbox.
-* Radio group.
-* Dropdown.
-* File picker.
-* Directory picker.
-* Package specifier input.
-* URL input.
-* Integer input.
-* Free-form additional arguments.
+- Text input.
+- Multi-value text input.
+- Checkbox.
+- Radio group.
+- Dropdown.
+- File picker.
+- Directory picker.
+- Package specifier input.
+- URL input.
+- Integer input.
+- Free-form additional arguments.
 
 ### 11.2 Generated command preview
 
@@ -1189,7 +1206,7 @@ The generated command should update live as fields change.
 Display two versions:
 
 1. Human-readable shell command.
-2. Exact subprocess argv list.
+1. Exact subprocess argv list.
 
 Example shell display:
 
@@ -1214,16 +1231,16 @@ Example argv display:
 
 Each command form should have:
 
-* Basic section.
-* Common options section.
-* Advanced options section.
-* Network/index section.
-* Build/install behavior section, where relevant.
-* Raw extra args section.
+- Basic section.
+- Common options section.
+- Advanced options section.
+- Network/index section.
+- Build/install behavior section, where relevant.
+- Raw extra args section.
 
 The raw extra args section is important for newly added pip options not yet modeled by the GUI.
 
----
+______________________________________________________________________
 
 ## 12. Help system
 
@@ -1231,37 +1248,37 @@ The raw extra args section is important for newly added pip options not yet mode
 
 Help panel should combine:
 
-* Built-in explanation.
-* Built-in examples.
-* Output from `pip help`.
-* Output from `pip <command> --help`.
-* Warnings generated from current form values.
+- Built-in explanation.
+- Built-in examples.
+- Output from `pip help`.
+- Output from `pip <command> --help`.
+- Warnings generated from current form values.
 
 ### 12.2 Help tabs
 
 Suggested tabs:
 
-* **Overview**
-* **Options**
-* **Examples**
-* **Generated command**
-* **Troubleshooting**
-* **Raw pip help**
+- **Overview**
+- **Options**
+- **Examples**
+- **Generated command**
+- **Troubleshooting**
+- **Raw pip help**
 
 ### 12.3 Example quality
 
 Examples should be practical:
 
-* Install a package into the selected environment.
-* Install from requirements.
-* Upgrade one package.
-* Download wheels for offline use.
-* Show active config.
-* Use an internal package index.
-* Install with a constraints file.
-* Inspect installed packages as JSON.
+- Install a package into the selected environment.
+- Install from requirements.
+- Upgrade one package.
+- Download wheels for offline use.
+- Show active config.
+- Use an internal package index.
+- Install with a constraints file.
+- Inspect installed packages as JSON.
 
----
+______________________________________________________________________
 
 ## 13. Safety model
 
@@ -1273,15 +1290,15 @@ Commands should be classified:
 
 Examples:
 
-* `list`
-* `show`
-* `freeze`
-* `check`
-* `debug`
-* `config list`
-* `config debug`
-* `cache dir`
-* `cache info`
+- `list`
+- `show`
+- `freeze`
+- `check`
+- `debug`
+- `config list`
+- `config debug`
+- `cache dir`
+- `cache info`
 
 No confirmation required.
 
@@ -1289,10 +1306,10 @@ No confirmation required.
 
 Examples:
 
-* `install`
-* `uninstall`
-* `wheel`, when writing files
-* `download`, when writing files
+- `install`
+- `uninstall`
+- `wheel`, when writing files
+- `download`, when writing files
 
 Requires clear Run action.
 
@@ -1300,10 +1317,10 @@ Requires clear Run action.
 
 Examples:
 
-* `uninstall`
-* `cache remove`
-* `cache purge`
-* `config unset`
+- `uninstall`
+- `cache remove`
+- `cache purge`
+- `config unset`
 
 Requires confirmation.
 
@@ -1311,10 +1328,10 @@ Requires confirmation.
 
 Examples:
 
-* `config set global.index-url`
-* `config set global.trusted-host`
-* `install --trusted-host`
-* `install --break-system-packages`
+- `config set global.index-url`
+- `config set global.trusted-host`
+- `install --trusted-host`
+- `install --break-system-packages`
 
 Requires warning and confirmation.
 
@@ -1340,7 +1357,7 @@ If index/proxy URLs contain credentials, show:
 This command appears to include credentials. They will be redacted in the UI and history by default.
 ```
 
----
+______________________________________________________________________
 
 ## 14. History and presets
 
@@ -1348,14 +1365,14 @@ This command appears to include credentials. They will be redacted in the UI and
 
 Store:
 
-* Timestamp.
-* Command label.
-* Redacted command string.
-* Redacted argv list.
-* Exit code.
-* Duration.
-* Interpreter path.
-* Working directory.
+- Timestamp.
+- Command label.
+- Redacted command string.
+- Redacted argv list.
+- Exit code.
+- Duration.
+- Interpreter path.
+- Working directory.
 
 Do not store full output by default unless user opts in.
 
@@ -1365,10 +1382,10 @@ Users can save named presets.
 
 Examples:
 
-* “Install from internal index”
-* “Download wheels for offline cache”
-* “List outdated packages”
-* “Generate pip inspect report”
+- “Install from internal index”
+- “Download wheels for offline cache”
+- “List outdated packages”
+- “Generate pip inspect report”
 
 Preset format should be JSON or TOML in the app data directory.
 
@@ -1378,11 +1395,11 @@ Allow users to export presets to a portable file.
 
 Use cases:
 
-* Teaching.
-* Internal support desk workflows.
-* Enterprise standard install patterns.
+- Teaching.
+- Internal support desk workflows.
+- Enterprise standard install patterns.
 
----
+______________________________________________________________________
 
 ## 15. Accessibility
 
@@ -1390,35 +1407,35 @@ Use cases:
 
 The app must be usable by keyboard:
 
-* Command search focus shortcut.
-* Move through command list with arrows.
-* Tab through form fields in logical order.
-* Run command shortcut.
-* Copy command shortcut.
-* Focus output panel shortcut.
-* Focus help panel shortcut.
+- Command search focus shortcut.
+- Move through command list with arrows.
+- Tab through form fields in logical order.
+- Run command shortcut.
+- Copy command shortcut.
+- Focus output panel shortcut.
+- Focus help panel shortcut.
 
 ### 15.2 Screen reader support
 
 Tkinter accessibility varies by platform, but the app should help by:
 
-* Using real labels for fields.
-* Avoiding icon-only controls.
-* Keeping output copyable as text.
-* Avoiding custom canvas widgets for essential controls.
-* Providing plain text summaries.
+- Using real labels for fields.
+- Avoiding icon-only controls.
+- Keeping output copyable as text.
+- Avoiding custom canvas widgets for essential controls.
+- Providing plain text summaries.
 
 ### 15.3 Output verbosity
 
 Large output areas should have:
 
-* Search.
-* Copy all.
-* Copy selection.
-* Save to file.
-* Clear output.
+- Search.
+- Copy all.
+- Copy selection.
+- Save to file.
+- Clear output.
 
----
+______________________________________________________________________
 
 ## 16. Platform support
 
@@ -1426,35 +1443,35 @@ Large output areas should have:
 
 Target:
 
-* Windows 10/11.
-* Linux desktop environments with Tkinter support.
-* macOS where Python/Tkinter are available.
+- Windows 10/11.
+- Linux desktop environments with Tkinter support.
+- macOS where Python/Tkinter are available.
 
 Windows should be treated as a first-class platform.
 
 ### 16.2 Windows-specific considerations
 
-* Prefer selected interpreter path over PATH commands.
-* Detect `.venv\Scripts\python.exe`.
-* Support Git Bash users by making commands copyable in a way that works in normal shell contexts.
-* Avoid assuming PowerShell.
-* Avoid shell-specific quoting as the execution path.
-* Provide both Windows and POSIX command rendering when helpful.
+- Prefer selected interpreter path over PATH commands.
+- Detect `.venv\Scripts\python.exe`.
+- Support Git Bash users by making commands copyable in a way that works in normal shell contexts.
+- Avoid assuming PowerShell.
+- Avoid shell-specific quoting as the execution path.
+- Provide both Windows and POSIX command rendering when helpful.
 
 ### 16.3 File manager integration
 
 Provide buttons to open:
 
-* Working directory.
-* Python executable folder.
-* Site-packages location.
-* Pip cache directory.
-* Config file directory.
-* Requirements file directory.
+- Working directory.
+- Python executable folder.
+- Site-packages location.
+- Pip cache directory.
+- Config file directory.
+- Requirements file directory.
 
 Use platform-safe methods.
 
----
+______________________________________________________________________
 
 ## 17. Data storage
 
@@ -1475,25 +1492,25 @@ recent_interpreters.json
 
 Persist:
 
-* Recent interpreters.
-* Last selected interpreter.
-* Last working directory.
-* Window size.
-* Panel sizes.
-* Redaction preference.
-* Output retention preference.
-* Saved presets.
+- Recent interpreters.
+- Last selected interpreter.
+- Last working directory.
+- Window size.
+- Panel sizes.
+- Redaction preference.
+- Output retention preference.
+- Saved presets.
 
 ### 17.3 Privacy defaults
 
 Default behavior:
 
-* Redact secrets.
-* Do not store full command output.
-* Do not send telemetry.
-* Do not check the internet except when pip itself is invoked by the user.
+- Redact secrets.
+- Do not store full command output.
+- Do not send telemetry.
+- Do not check the internet except when pip itself is invoked by the user.
 
----
+______________________________________________________________________
 
 ## 18. Networking and offline support
 
@@ -1503,27 +1520,27 @@ Default behavior:
 
 Support forms/examples for:
 
-* `pip download` into a wheelhouse.
-* `pip install --no-index --find-links <dir>`.
-* Cache directory inspection.
-* Cache-only troubleshooting.
+- `pip download` into a wheelhouse.
+- `pip install --no-index --find-links <dir>`.
+- Cache directory inspection.
+- Cache-only troubleshooting.
 
 ### 18.2 Private indexes
 
 Support clear UI for:
 
-* `--index-url`
-* `--extra-index-url`
-* `--no-index`
-* `--find-links`
-* `--trusted-host`
-* `--cert`
-* `--client-cert`
-* Proxy settings
+- `--index-url`
+- `--extra-index-url`
+- `--no-index`
+- `--find-links`
+- `--trusted-host`
+- `--cert`
+- `--client-cert`
+- Proxy settings
 
 Warn about credential exposure.
 
----
+______________________________________________________________________
 
 ## 19. Error handling
 
@@ -1531,35 +1548,35 @@ Warn about credential exposure.
 
 When commands fail, show:
 
-* Exit code.
-* Raw stderr.
-* Generated command.
-* Interpreter path.
-* Working directory.
-* Relevant config summary.
-* Suggested next diagnostic commands.
+- Exit code.
+- Raw stderr.
+- Generated command.
+- Interpreter path.
+- Working directory.
+- Relevant config summary.
+- Suggested next diagnostic commands.
 
 ### 19.2 Common error recognizers
 
 The app may provide friendly hints for common patterns:
 
-* Package not found.
-* No matching distribution.
-* Python version incompatible.
-* Permission denied.
-* Externally managed environment.
-* SSL certificate failure.
-* Proxy failure.
-* Build backend failure.
-* Missing compiler.
-* Hash mismatch.
-* Dependency conflict.
-* Resolver failure.
-* Wrong interpreter.
+- Package not found.
+- No matching distribution.
+- Python version incompatible.
+- Permission denied.
+- Externally managed environment.
+- SSL certificate failure.
+- Proxy failure.
+- Build backend failure.
+- Missing compiler.
+- Hash mismatch.
+- Dependency conflict.
+- Resolver failure.
+- Wrong interpreter.
 
 The raw output must always remain available.
 
----
+______________________________________________________________________
 
 ## 20. Testing strategy
 
@@ -1567,14 +1584,14 @@ The raw output must always remain available.
 
 Test:
 
-* Command spec to argv conversion.
-* Redaction logic.
-* Environment variable collection.
-* Config parsing from sample outputs.
-* Interpreter probe parsing.
-* Safety classification.
-* History persistence.
-* Preset persistence.
+- Command spec to argv conversion.
+- Redaction logic.
+- Environment variable collection.
+- Config parsing from sample outputs.
+- Interpreter probe parsing.
+- Safety classification.
+- History persistence.
+- Preset persistence.
 
 ### 20.2 Integration tests
 
@@ -1582,12 +1599,12 @@ Use temporary virtual environments.
 
 Test:
 
-* `pip --version`.
-* `pip list`.
-* `pip show pip`.
-* `pip config list`.
-* `pip cache dir`.
-* Controlled install using a local wheelhouse or local package.
+- `pip --version`.
+- `pip list`.
+- `pip show pip`.
+- `pip config list`.
+- `pip cache dir`.
+- Controlled install using a local wheelhouse or local package.
 
 Avoid tests that require internet by default.
 
@@ -1595,11 +1612,11 @@ Avoid tests that require internet by default.
 
 Tkinter GUI tests should cover:
 
-* App starts.
-* Command selection updates form.
-* Form state updates generated command.
-* Output panel receives text.
-* Help panel updates.
+- App starts.
+- Command selection updates form.
+- Form state updates generated command.
+- Output panel receives text.
+- Help panel updates.
 
 GUI tests can be limited in CI if headless display support is unavailable.
 
@@ -1632,7 +1649,7 @@ Expected argv:
 ]
 ```
 
----
+______________________________________________________________________
 
 ## 21. Packaging
 
@@ -1666,15 +1683,15 @@ python -m pip_ui
 
 Base dependency goal:
 
-* Standard library only, if practical.
+- Standard library only, if practical.
 
 Tkinter ships with many Python distributions but may be packaged separately on some Linux systems. The app should detect missing Tkinter and print a useful terminal error.
 
 Optional dependencies may be considered for:
 
-* Platform app data directories.
-* Richer TOML writing before Python versions where needed.
-* Packaging as a standalone executable.
+- Platform app data directories.
+- Richer TOML writing before Python versions where needed.
+- Packaging as a standalone executable.
 
 ### 21.3 Entry behavior
 
@@ -1702,7 +1719,7 @@ pip-ui --interpreter /path/to/python
 
 should open the GUI with that interpreter selected.
 
----
+______________________________________________________________________
 
 ## 22. CLI options for `pip-ui` itself
 
@@ -1719,28 +1736,28 @@ pip-ui
   --help                   Show help
 ```
 
----
+______________________________________________________________________
 
 ## 23. Future enhancements
 
 Potential later features:
 
-* Dependency graph visualization.
-* Requirements file editor.
-* Constraints file helper.
-* Local wheelhouse manager.
-* Vulnerability scan integration.
-* License summary.
-* `pip-audit` integration as optional extra.
-* `uv` mode as a separate backend.
-* Poetry/PDM/Hatch project detection.
-* Project health dashboard.
-* Export environment as a support bundle.
-* App packaging as Windows executable.
+- Dependency graph visualization.
+- Requirements file editor.
+- Constraints file helper.
+- Local wheelhouse manager.
+- Vulnerability scan integration.
+- License summary.
+- `pip-audit` integration as optional extra.
+- `uv` mode as a separate backend.
+- Poetry/PDM/Hatch project detection.
+- Project health dashboard.
+- Export environment as a support bundle.
+- App packaging as Windows executable.
 
 These are not required for MVP.
 
----
+______________________________________________________________________
 
 ## 24. MVP scope
 
@@ -1750,76 +1767,76 @@ The MVP should focus on correctness, transparency, and configuration visibility.
 
 Required:
 
-* `install`
-* `uninstall`
-* `list`
-* `show`
-* `freeze`
-* `check`
-* `config list`
-* `config debug`
-* `cache dir`
-* `cache info`
-* `debug`
-* `--version`
-* `help`
+- `install`
+- `uninstall`
+- `list`
+- `show`
+- `freeze`
+- `check`
+- `config list`
+- `config debug`
+- `cache dir`
+- `cache info`
+- `debug`
+- `--version`
+- `help`
 
 ### 24.2 MVP UI
 
 Required:
 
-* Three-panel layout.
-* Interpreter selector.
-* Working directory selector.
-* Command tree.
-* Dynamic command form.
-* Generated command preview.
-* Streaming output.
-* Contextual help.
-* Config dashboard.
-* Copy command.
-* Save output.
+- Three-panel layout.
+- Interpreter selector.
+- Working directory selector.
+- Command tree.
+- Dynamic command form.
+- Generated command preview.
+- Streaming output.
+- Contextual help.
+- Config dashboard.
+- Copy command.
+- Save output.
 
 ### 24.3 MVP safety
 
 Required:
 
-* Global environment warning.
-* Confirmation for uninstall.
-* Confirmation for cache purge if included.
-* Redaction for URL credentials.
-* Clear display of selected interpreter.
+- Global environment warning.
+- Confirmation for uninstall.
+- Confirmation for cache purge if included.
+- Redaction for URL credentials.
+- Clear display of selected interpreter.
 
 ### 24.4 MVP diagnostics
 
 Required:
 
-* Diagnostics report as Markdown or plain text.
-* Include pip config debug output.
-* Include pip debug output.
-* Include relevant redacted environment variables.
+- Diagnostics report as Markdown or plain text.
+- Include pip config debug output.
+- Include pip debug output.
+- Include relevant redacted environment variables.
 
----
+______________________________________________________________________
 
 ## 25. Acceptance criteria
 
 The project is acceptable when:
 
 1. A user can select a Python interpreter and see its pip version.
-2. A user can run `pip list` and view output in the GUI.
-3. A user can install a package into the selected interpreter.
-4. A user can uninstall a package only after confirmation.
-5. A user can view active pip configuration.
-6. A user can see where pip config files are located.
-7. A user can see relevant environment variables affecting pip.
-8. A user can copy the exact generated command.
-9. A user can export diagnostics.
-10. The app does not import pip internals.
-11. The app invokes pip through subprocess using `python -m pip`.
-12. The app redacts credentials by default.
-13. The app works on Windows with a standard Python installation that includes Tkinter.
+1. A user can run `pip list` and view output in the GUI.
+1. A user can install a package into the selected interpreter.
+1. A user can uninstall a package only after confirmation.
+1. A user can view active pip configuration.
+1. A user can see where pip config files are located.
+1. A user can see relevant environment variables affecting pip.
+1. A user can copy the exact generated command.
+1. A user can export diagnostics.
+1. The app does not import pip internals.
+1. The app invokes pip through subprocess using `python -m pip`.
+1. The app redacts credentials by default.
+1. The app works on Windows with a standard Python installation that includes Tkinter.
 
----
+______________________________________________________________________
 
 ## 26. Example user stories
 
@@ -1829,9 +1846,9 @@ As a beginner, I want to select my project `.venv` and install `requests` so tha
 
 Acceptance:
 
-* The selected interpreter is visible.
-* The generated command shows `.venv` Python.
-* The output shows whether install succeeded.
+- The selected interpreter is visible.
+- The generated command shows `.venv` Python.
+- The output shows whether install succeeded.
 
 ### 26.2 Config troubleshooting
 
@@ -1839,9 +1856,9 @@ As a developer, I want to know why pip is using an unexpected package index so t
 
 Acceptance:
 
-* The config dashboard shows active index settings.
-* The dashboard shows config files and relevant environment variables.
-* Credentials are redacted.
+- The config dashboard shows active index settings.
+- The dashboard shows config files and relevant environment variables.
+- Credentials are redacted.
 
 ### 26.3 Offline wheelhouse
 
@@ -1849,9 +1866,9 @@ As an enterprise user, I want to download packages into a folder so that I can i
 
 Acceptance:
 
-* The download form supports destination directory.
-* The install form supports `--no-index` and `--find-links`.
-* The generated commands are copyable.
+- The download form supports destination directory.
+- The install form supports `--no-index` and `--find-links`.
+- The generated commands are copyable.
 
 ### 26.4 Support report
 
@@ -1859,37 +1876,37 @@ As a support engineer, I want the user to export diagnostics so that I can under
 
 Acceptance:
 
-* Report includes interpreter, pip version, config, environment variables, cache directory, and last command.
-* Secrets are redacted.
+- Report includes interpreter, pip version, config, environment variables, cache directory, and last command.
+- Secrets are redacted.
 
----
+______________________________________________________________________
 
 ## 27. Open questions
 
 1. Should `pip-ui` support editing config files directly, or only invoke `pip config set/unset/edit`?
-2. Should command specs be generated from pip help output, manually maintained, or hybrid?
-3. Should history include full output by default, opt-in only, or never?
-4. Should the app provide a standalone executable distribution in addition to PyPI?
-5. Should advanced enterprise options be hidden behind an “Advanced mode” toggle?
-6. Should `pip-ui` eventually support `uv pip` as a separate backend, or remain pip-only?
+1. Should command specs be generated from pip help output, manually maintained, or hybrid?
+1. Should history include full output by default, opt-in only, or never?
+1. Should the app provide a standalone executable distribution in addition to PyPI?
+1. Should advanced enterprise options be hidden behind an “Advanced mode” toggle?
+1. Should `pip-ui` eventually support `uv pip` as a separate backend, or remain pip-only?
 
----
+______________________________________________________________________
 
 ## 28. Recommended implementation sequence
 
 1. Create Tkinter shell with three resizable panels.
-2. Implement interpreter selector and validation.
-3. Implement subprocess runner with streaming output.
-4. Implement command specs for MVP commands.
-5. Implement generated command preview.
-6. Implement config dashboard using `pip config debug`, `pip config list`, and `pip debug`.
-7. Implement redaction and command history.
-8. Implement safety confirmations.
-9. Add diagnostics export.
-10. Add tests for command generation, redaction, config parsing, and runner behavior.
-11. Package for PyPI with `pip-ui` entry point.
+1. Implement interpreter selector and validation.
+1. Implement subprocess runner with streaming output.
+1. Implement command specs for MVP commands.
+1. Implement generated command preview.
+1. Implement config dashboard using `pip config debug`, `pip config list`, and `pip debug`.
+1. Implement redaction and command history.
+1. Implement safety confirmations.
+1. Add diagnostics export.
+1. Add tests for command generation, redaction, config parsing, and runner behavior.
+1. Package for PyPI with `pip-ui` entry point.
 
----
+______________________________________________________________________
 
 ## 29. Product positioning
 

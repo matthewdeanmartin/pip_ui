@@ -18,7 +18,7 @@ from pip_ui.models import ArgSpec, CommandSpec
 from pip_ui.presets import PresetStore
 from pip_ui.runner import PipRunner
 from pip_ui.ui.dialogs import info_dialog
-from pip_ui.ui.global_options_dialog import GlobalOptionsDialog, summarize_globals
+from pip_ui.ui.global_options_dialog import summarize_globals
 
 MONO_FONT = ("Consolas", 10)
 

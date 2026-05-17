@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import ttk
 from typing import Any
-from collections.abc import Callable
 
 from pip_ui.environment import InterpreterDiscovery
 from pip_ui.models import InterpreterInfo
