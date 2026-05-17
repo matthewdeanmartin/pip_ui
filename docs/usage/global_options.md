@@ -9,10 +9,10 @@ Click the **Global Options...** button at the bottom of any command form. This o
 - **Verbosity (`-v` / `-q`):** Control how much output `pip` generates.
 - **Isolation (`--isolated`):** Run `pip` in isolation from environment variables and user configuration.
 - **Network Settings:**
-    - **Proxy:** Specify a proxy server.
-    - **Timeout:** Set socket timeouts.
-    - **Retries:** Set the maximum number of connection retries.
-    - **Certs:** Path to CA certificates or client certificates.
+  - **Proxy:** Specify a proxy server.
+  - **Timeout:** Set socket timeouts.
+  - **Retries:** Set the maximum number of connection retries.
+  - **Certs:** Path to CA certificates or client certificates.
 - **Caching:** Override the default cache directory or disable caching.
 - **Environment Constraints:** Force `pip` to only run inside a virtual environment (`--require-virtualenv`).
 

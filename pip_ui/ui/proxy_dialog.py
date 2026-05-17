@@ -7,7 +7,7 @@ Helps corporate users set up --proxy for pip.  Shows what is currently active
 from __future__ import annotations
 
 import os
-import subprocess
+import subprocess  # nosec B404
 import threading
 import tkinter as tk
 from tkinter import ttk
@@ -15,9 +15,9 @@ from typing import Any
 
 from pip_ui.encoding import utf8_subprocess_kwargs
 
-_LABEL_TESTING = "Testing…"
-_LABEL_OK = "✔  Proxy works"
-_LABEL_FAIL = "✗  Proxy test failed"
+LABEL_TESTING = "Testing…"
+LABEL_OK = "✔  Proxy works"
+LABEL_FAIL = "✗  Proxy test failed"
 
 
 class ProxyDialog(tk.Toplevel):
@@ -37,16 +37,16 @@ class ProxyDialog(tk.Toplevel):
         self.minsize(520, 420)
         self.transient(parent.winfo_toplevel())  # type: ignore[no-untyped-call]
         self.grab_set()
-        self._python_path = python_path
-        self._on_apply = on_apply
-        self._result_queue: list[tuple[bool, str]] = []
-        self._thread: threading.Thread | None = None
-        self._build_ui(current_proxy)
-        self.after(100, self._poll)
+        self.python_path = python_path
+        self.on_apply = on_apply
+        self.result_queue: list[tuple[bool, str]] = []
+        self.thread: threading.Thread | None = None
+        self.build_ui(current_proxy)
+        self.after(100, self.poll)
 
     # ------------------------------------------------------------------ build
 
-    def _build_ui(self, current_proxy: str | None) -> None:
+    def build_ui(self, current_proxy: str | None) -> None:
         pad: dict[str, Any] = {"padx": 10, "pady": 4}
 
         header = ttk.Frame(self)
@@ -69,7 +69,7 @@ class ProxyDialog(tk.Toplevel):
         # --- Environment variables in effect ---
         env_frame = ttk.LabelFrame(self, text="Active proxy environment variables")
         env_frame.pack(fill=tk.X, **pad)
-        env_text = self._read_proxy_env()
+        env_text = self.read_proxy_env()
         ttk.Label(
             env_frame,
             text=env_text or "(none set)",
@@ -82,10 +82,10 @@ class ProxyDialog(tk.Toplevel):
         entry_frame = ttk.LabelFrame(self, text="Proxy URL for this session (--proxy flag)")
         entry_frame.pack(fill=tk.X, **pad)
 
-        self._proxy_var = tk.StringVar(value=current_proxy or "")
+        self.proxy_var = tk.StringVar(value=current_proxy or "")
         entry_row = ttk.Frame(entry_frame)
         entry_row.pack(fill=tk.X, padx=4, pady=4)
-        ttk.Entry(entry_row, textvariable=self._proxy_var, width=46).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Entry(entry_row, textvariable=self.proxy_var, width=46).pack(side=tk.LEFT, fill=tk.X, expand=True)
 
         hint = ttk.Frame(entry_frame)
         hint.pack(fill=tk.X, padx=4, pady=(0, 4))
@@ -99,24 +99,24 @@ class ProxyDialog(tk.Toplevel):
 
         btn_row = ttk.Frame(entry_frame)
         btn_row.pack(fill=tk.X, padx=4, pady=4)
-        ttk.Button(btn_row, text="Apply to Global Options", command=self._apply).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_row, text="Clear Proxy", command=self._clear).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_row, text="Test Proxy", command=self._test).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_row, text="Apply to Global Options", command=self.apply).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_row, text="Clear Proxy", command=self.clear).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_row, text="Test Proxy", command=self.test).pack(side=tk.LEFT, padx=2)
 
         ttk.Separator(self, orient=tk.HORIZONTAL).pack(fill=tk.X, padx=6, pady=4)
 
         # --- Status + output ---
-        self._status_var = tk.StringVar(value="Enter a proxy URL and click Test Proxy.")
-        self._status_label = ttk.Label(
-            self, textvariable=self._status_var, font=("TkDefaultFont", 10, "bold"), foreground="#444"
+        self.status_var = tk.StringVar(value="Enter a proxy URL and click Test Proxy.")
+        self.status_label = ttk.Label(
+            self, textvariable=self.status_var, font=("TkDefaultFont", 10, "bold"), foreground="#444"
         )
-        self._status_label.pack(anchor=tk.W, **pad)
+        self.status_label.pack(anchor=tk.W, **pad)
 
         out_frame = ttk.Frame(self)
         out_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 4))
         sb = ttk.Scrollbar(out_frame, orient=tk.VERTICAL)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
-        self._output = tk.Text(
+        self.output = tk.Text(
             out_frame,
             font=("Consolas", 9),
             wrap=tk.WORD,
@@ -124,14 +124,14 @@ class ProxyDialog(tk.Toplevel):
             yscrollcommand=sb.set,
             height=6,
         )
-        self._output.pack(fill=tk.BOTH, expand=True)
-        sb.config(command=self._output.yview)
+        self.output.pack(fill=tk.BOTH, expand=True)
+        sb.config(command=self.output.yview)
 
         ttk.Button(self, text="Close", command=self.destroy).pack(anchor=tk.E, padx=10, pady=4)
 
     # ---------------------------------------------------------------- helpers
 
-    def _read_proxy_env(self) -> str:
+    def read_proxy_env(self) -> str:
         keys = ["HTTPS_PROXY", "HTTP_PROXY", "https_proxy", "http_proxy", "NO_PROXY", "no_proxy"]
         lines: list[str] = []
         for k in keys:
@@ -144,22 +144,22 @@ class ProxyDialog(tk.Toplevel):
                 lines.append(f"{k}={v_display}")
         return "\n".join(lines)
 
-    def _write(self, text: str) -> None:
-        self._output.configure(state=tk.NORMAL)
-        self._output.delete("1.0", tk.END)
-        self._output.insert(tk.END, text)
-        self._output.configure(state=tk.DISABLED)
+    def write(self, text: str) -> None:
+        self.output.configure(state=tk.NORMAL)
+        self.output.delete("1.0", tk.END)
+        self.output.insert(tk.END, text)
+        self.output.configure(state=tk.DISABLED)
 
-    def _check_credentials(self, url: str) -> bool:
+    def check_credentials(self, url: str) -> bool:
         import re
 
         return bool(re.search(r"://[^:@/\s]+:[^@/\s]+@", url))
 
     # --------------------------------------------------------------- actions
 
-    def _apply(self) -> None:
-        proxy = self._proxy_var.get().strip()
-        if self._check_credentials(proxy):
+    def apply(self) -> None:
+        proxy = self.proxy_var.get().strip()
+        if self.check_credentials(proxy):
             from pip_ui.ui.dialogs import confirm_dialog
 
             ok = confirm_dialog(
@@ -171,28 +171,28 @@ class ProxyDialog(tk.Toplevel):
             )
             if not ok:
                 return
-        if self._on_apply:
-            self._on_apply(proxy or None)
+        if self.on_apply:
+            self.on_apply(proxy or None)
         self.destroy()
 
-    def _clear(self) -> None:
-        self._proxy_var.set("")
+    def clear(self) -> None:
+        self.proxy_var.set("")
 
-    def _test(self) -> None:
-        if not self._python_path:
-            self._status_var.set("No interpreter selected — choose one in the main window first.")
-            self._status_label.config(foreground="red")
+    def test(self) -> None:
+        if not self.python_path:
+            self.status_var.set("No interpreter selected — choose one in the main window first.")
+            self.status_label.config(foreground="red")
             return
-        proxy = self._proxy_var.get().strip()
+        proxy = self.proxy_var.get().strip()
         if not proxy:
-            self._status_var.set("Enter a proxy URL first.")
+            self.status_var.set("Enter a proxy URL first.")
             return
-        self._status_var.set(_LABEL_TESTING)
-        self._status_label.config(foreground="#444")
-        self._write("")
+        self.status_var.set(LABEL_TESTING)
+        self.status_label.config(foreground="#444")
+        self.write("")
 
         def worker() -> None:
-            argv = [self._python_path, "-m", "pip", "index", "versions", "pip", "--proxy", proxy]
+            argv = [self.python_path, "-m", "pip", "index", "versions", "pip", "--proxy", proxy]
             try:
                 result = subprocess.run(  # nosec B603
                     argv,
@@ -203,26 +203,26 @@ class ProxyDialog(tk.Toplevel):
                     **utf8_subprocess_kwargs(),
                 )
                 combined = (result.stdout + result.stderr).strip()
-                self._result_queue.append((result.returncode == 0, combined or "(no output)"))
+                self.result_queue.append((result.returncode == 0, combined or "(no output)"))
             except subprocess.TimeoutExpired:
-                self._result_queue.append((False, "Timed out after 20 seconds."))
+                self.result_queue.append((False, "Timed out after 20 seconds."))
             except Exception as exc:
-                self._result_queue.append((False, f"Error: {exc}"))
+                self.result_queue.append((False, f"Error: {exc}"))
 
-        self._thread = threading.Thread(target=worker, daemon=True)
-        self._thread.start()
+        self.thread = threading.Thread(target=worker, daemon=True)
+        self.thread.start()
 
     # --------------------------------------------------------------- polling
 
-    def _poll(self) -> None:
-        if self._result_queue:
-            ok, text = self._result_queue.pop(0)
+    def poll(self) -> None:
+        if self.result_queue:
+            ok, text = self.result_queue.pop(0)
             if ok:
-                self._status_var.set(_LABEL_OK)
-                self._status_label.config(foreground="green")
+                self.status_var.set(LABEL_OK)
+                self.status_label.config(foreground="green")
             else:
-                self._status_var.set(_LABEL_FAIL)
-                self._status_label.config(foreground="red")
-            self._write(text)
-            self._thread = None
-        self.after(100, self._poll)
+                self.status_var.set(LABEL_FAIL)
+                self.status_label.config(foreground="red")
+            self.write(text)
+            self.thread = None
+        self.after(100, self.poll)

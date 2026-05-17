@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # Lines that obviously look like pip requirement specifiers.
-_REQ_LINE_RE = re.compile(
+REQ_LINE_RE = re.compile(
     r"""^\s*
     (?:
         -r\s+\S+        # -r other-requirements.txt
@@ -94,7 +94,7 @@ def looks_like_requirements(path: Path, sample_lines: int = 30) -> bool:
         if not line or line.startswith("#"):
             continue
         meaningful += 1
-        if _REQ_LINE_RE.match(line):
+        if REQ_LINE_RE.match(line):
             matched += 1
 
     if meaningful == 0:

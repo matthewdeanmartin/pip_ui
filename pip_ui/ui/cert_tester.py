@@ -8,7 +8,7 @@ and immediately discover whether pip can use them.  The test runs
 from __future__ import annotations
 
 import os
-import subprocess
+import subprocess  # nosec B404
 import threading
 import tkinter as tk
 from pathlib import Path
@@ -17,10 +17,10 @@ from typing import Any
 
 from pip_ui.encoding import utf8_subprocess_kwargs
 
-_LABEL_TESTING = "Testing…"
-_LABEL_OK = "✔  Certificate works"
-_LABEL_FAIL = "✗  Certificate failed"
-_LABEL_READY = "Select a certificate to test."
+LABEL_TESTING = "Testing…"
+LABEL_OK = "✔  Certificate works"
+LABEL_FAIL = "✗  Certificate failed"
+LABEL_READY = "Select a certificate to test."
 
 
 class CertTesterDialog(tk.Toplevel):
@@ -33,15 +33,15 @@ class CertTesterDialog(tk.Toplevel):
         self.minsize(540, 380)
         self.transient(parent.winfo_toplevel())  # type: ignore[no-untyped-call]
         self.grab_set()
-        self._python_path = python_path
-        self._thread: threading.Thread | None = None
-        self._result_queue: list[tuple[bool, str]] = []
-        self._build_ui()
-        self.after(100, self._poll)
+        self.python_path = python_path
+        self.thread: threading.Thread | None = None
+        self.result_queue: list[tuple[bool, str]] = []
+        self.build_ui()
+        self.after(100, self.poll)
 
     # ------------------------------------------------------------------ build
 
-    def _build_ui(self) -> None:
+    def build_ui(self) -> None:
         pad = {"padx": 10, "pady": 4}
 
         header = ttk.Frame(self)
@@ -68,38 +68,38 @@ class CertTesterDialog(tk.Toplevel):
         file_frame = ttk.LabelFrame(self, text="Test a single certificate file (.pem / .crt / .cer)")
         file_frame.pack(fill=tk.X, **pad)
 
-        self._cert_var = tk.StringVar()
+        self.cert_var = tk.StringVar()
         row = ttk.Frame(file_frame)
         row.pack(fill=tk.X, padx=4, pady=4)
-        ttk.Entry(row, textvariable=self._cert_var, width=46).pack(side=tk.LEFT, fill=tk.X, expand=True)
-        ttk.Button(row, text="Browse…", command=self._browse_file).pack(side=tk.LEFT, padx=(4, 0))
-        ttk.Button(file_frame, text="Test Certificate", command=self._test_file).pack(anchor=tk.W, padx=4, pady=(0, 4))
+        ttk.Entry(row, textvariable=self.cert_var, width=46).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Button(row, text="Browse…", command=self.browse_file).pack(side=tk.LEFT, padx=(4, 0))
+        ttk.Button(file_frame, text="Test Certificate", command=self.test_file).pack(anchor=tk.W, padx=4, pady=(0, 4))
 
         # --- Folder scan ---
         folder_frame = ttk.LabelFrame(self, text="Scan a folder — try every .pem / .crt / .cer file")
         folder_frame.pack(fill=tk.X, **pad)
 
-        self._folder_var = tk.StringVar()
+        self.folder_var = tk.StringVar()
         row2 = ttk.Frame(folder_frame)
         row2.pack(fill=tk.X, padx=4, pady=4)
-        ttk.Entry(row2, textvariable=self._folder_var, width=46).pack(side=tk.LEFT, fill=tk.X, expand=True)
-        ttk.Button(row2, text="Browse…", command=self._browse_folder).pack(side=tk.LEFT, padx=(4, 0))
-        ttk.Button(folder_frame, text="Scan Folder", command=self._scan_folder).pack(anchor=tk.W, padx=4, pady=(0, 4))
+        ttk.Entry(row2, textvariable=self.folder_var, width=46).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Button(row2, text="Browse…", command=self.browse_folder).pack(side=tk.LEFT, padx=(4, 0))
+        ttk.Button(folder_frame, text="Scan Folder", command=self.scan_folder).pack(anchor=tk.W, padx=4, pady=(0, 4))
 
         ttk.Separator(self, orient=tk.HORIZONTAL).pack(fill=tk.X, padx=6, pady=4)
 
         # --- Status / output ---
-        self._status_var = tk.StringVar(value=_LABEL_READY)
-        self._status_label = ttk.Label(
-            self, textvariable=self._status_var, font=("TkDefaultFont", 10, "bold"), foreground="#444"
+        self.status_var = tk.StringVar(value=LABEL_READY)
+        self.status_label = ttk.Label(
+            self, textvariable=self.status_var, font=("TkDefaultFont", 10, "bold"), foreground="#444"
         )
-        self._status_label.pack(anchor=tk.W, **pad)
+        self.status_label.pack(anchor=tk.W, **pad)
 
         out_frame = ttk.Frame(self)
         out_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 4))
         sb = ttk.Scrollbar(out_frame, orient=tk.VERTICAL)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
-        self._output = tk.Text(
+        self.output = tk.Text(
             out_frame,
             font=("Consolas", 9),
             wrap=tk.WORD,
@@ -107,76 +107,76 @@ class CertTesterDialog(tk.Toplevel):
             yscrollcommand=sb.set,
             height=8,
         )
-        self._output.pack(fill=tk.BOTH, expand=True)
-        sb.config(command=self._output.yview)
+        self.output.pack(fill=tk.BOTH, expand=True)
+        sb.config(command=self.output.yview)
 
         ttk.Button(self, text="Close", command=self.destroy).pack(anchor=tk.E, padx=10, pady=4)
 
     # ---------------------------------------------------------------- helpers
 
-    def _write(self, text: str) -> None:
-        self._output.configure(state=tk.NORMAL)
-        self._output.delete("1.0", tk.END)
-        self._output.insert(tk.END, text)
-        self._output.configure(state=tk.DISABLED)
+    def write(self, text: str) -> None:
+        self.output.configure(state=tk.NORMAL)
+        self.output.delete("1.0", tk.END)
+        self.output.insert(tk.END, text)
+        self.output.configure(state=tk.DISABLED)
 
-    def _browse_file(self) -> None:
+    def browse_file(self) -> None:
         path = filedialog.askopenfilename(
             parent=self,
             title="Select certificate file",
             filetypes=[("Certificate files", "*.pem *.crt *.cer"), ("All files", "*.*")],
         )
         if path:
-            self._cert_var.set(path)
+            self.cert_var.set(path)
 
-    def _browse_folder(self) -> None:
+    def browse_folder(self) -> None:
         path = filedialog.askdirectory(parent=self, title="Select folder containing certificates")
         if path:
-            self._folder_var.set(path)
+            self.folder_var.set(path)
 
-    def _no_interpreter_warning(self) -> bool:
-        if not self._python_path:
-            self._status_var.set("No interpreter selected — choose one in the main window first.")
-            self._status_label.config(foreground="red")
+    def no_interpreter_warning(self) -> bool:
+        if not self.python_path:
+            self.status_var.set("No interpreter selected — choose one in the main window first.")
+            self.status_label.config(foreground="red")
             return True
         return False
 
     # ------------------------------------------------------------------ tests
 
-    def _test_file(self) -> None:
-        if self._no_interpreter_warning():
+    def test_file(self) -> None:
+        if self.no_interpreter_warning():
             return
-        path = self._cert_var.get().strip()
+        path = self.cert_var.get().strip()
         if not path:
-            self._status_var.set("Enter a certificate file path first.")
+            self.status_var.set("Enter a certificate file path first.")
             return
         if not os.path.isfile(path):
-            self._status_var.set(f"File not found: {path}")
-            self._status_label.config(foreground="red")
+            self.status_var.set(f"File not found: {path}")
+            self.status_label.config(foreground="red")
             return
-        self._run_test(path)
+        self.run_test(path)
 
-    def _scan_folder(self) -> None:
-        if self._no_interpreter_warning():
+    def scan_folder(self) -> None:
+        if self.no_interpreter_warning():
             return
-        folder = self._folder_var.get().strip()
+        folder = self.folder_var.get().strip()
         if not folder or not os.path.isdir(folder):
-            self._status_var.set("Enter a valid folder path first.")
+            self.status_var.set("Enter a valid folder path first.")
             return
         certs = [str(p) for p in Path(folder).iterdir() if p.suffix.lower() in {".pem", ".crt", ".cer"} and p.is_file()]
         if not certs:
-            self._status_var.set("No .pem/.crt/.cer files found in that folder.")
+            self.status_var.set("No .pem/.crt/.cer files found in that folder.")
             return
-        self._status_var.set(f"Scanning {len(certs)} file(s)…")
-        self._status_label.config(foreground="#444")
-        self._write("")
+        self.status_var.set(f"Scanning {len(certs)} file(s)…")
+        self.status_label.config(foreground="#444")
+        self.write("")
 
         # Run tests sequentially in a background thread.
         def worker() -> None:
             lines: list[str] = []
             found: str | None = None
             for cert in certs:
-                ok, _detail = self._check_cert(cert)
+                ok, _detail = self.check_cert(cert)
                 icon = "✔" if ok else "✗"
                 lines.append(f"{icon}  {os.path.basename(cert)}")
                 if ok and found is None:
@@ -184,26 +184,26 @@ class CertTesterDialog(tk.Toplevel):
             summary = "\n".join(lines)
             if found:
                 summary += f"\n\nFirst working cert:\n  {found}"
-            self._result_queue.append((bool(found), summary))
+            self.result_queue.append((bool(found), summary))
 
-        self._thread = threading.Thread(target=worker, daemon=True)
-        self._thread.start()
+        self.thread = threading.Thread(target=worker, daemon=True)
+        self.thread.start()
 
-    def _run_test(self, cert_path: str) -> None:
-        self._status_var.set(_LABEL_TESTING)
-        self._status_label.config(foreground="#444")
-        self._write("")
+    def run_test(self, cert_path: str) -> None:
+        self.status_var.set(LABEL_TESTING)
+        self.status_label.config(foreground="#444")
+        self.write("")
 
         def worker() -> None:
-            ok, output = self._check_cert(cert_path)
-            self._result_queue.append((ok, output))
+            ok, output = self.check_cert(cert_path)
+            self.result_queue.append((ok, output))
 
-        self._thread = threading.Thread(target=worker, daemon=True)
-        self._thread.start()
+        self.thread = threading.Thread(target=worker, daemon=True)
+        self.thread.start()
 
-    def _check_cert(self, cert_path: str) -> tuple[bool, str]:
+    def check_cert(self, cert_path: str) -> tuple[bool, str]:
         """Run ``pip index versions pip --cert <path>`` and return (success, output)."""
-        argv = [self._python_path, "-m", "pip", "index", "versions", "pip", "--cert", cert_path]
+        argv = [self.python_path, "-m", "pip", "index", "versions", "pip", "--cert", cert_path]
         try:
             result = subprocess.run(  # nosec B603
                 argv,
@@ -222,15 +222,15 @@ class CertTesterDialog(tk.Toplevel):
 
     # ----------------------------------------------------------------- polling
 
-    def _poll(self) -> None:
-        if self._result_queue:
-            ok, text = self._result_queue.pop(0)
+    def poll(self) -> None:
+        if self.result_queue:
+            ok, text = self.result_queue.pop(0)
             if ok:
-                self._status_var.set(_LABEL_OK)
-                self._status_label.config(foreground="green")
+                self.status_var.set(LABEL_OK)
+                self.status_label.config(foreground="green")
             else:
-                self._status_var.set(_LABEL_FAIL)
-                self._status_label.config(foreground="red")
-            self._write(text)
-            self._thread = None
-        self.after(100, self._poll)
+                self.status_var.set(LABEL_FAIL)
+                self.status_label.config(foreground="red")
+            self.write(text)
+            self.thread = None
+        self.after(100, self.poll)

@@ -19,6 +19,7 @@ The `config_edit` command allows you to open your `pip` configuration file in an
 ### Editor Opener
 
 When you run `config_edit`, `pip-ui-tkinter` invokes `pip config edit`.
+
 - **Windows:** If no editor is configured in your environment (via `EDITOR` or `VISUAL` variables), `pip-ui-tkinter` defaults to `notepad.exe` to ensure the file opens successfully.
 - **POSIX:** It relies on your system's default editor configuration.
 

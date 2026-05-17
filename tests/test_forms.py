@@ -11,7 +11,7 @@ from pip_ui.forms import (
 )
 
 
-def _defaults(name: str) -> dict[str, object]:
+def get_defaults(name: str) -> dict[str, object]:
     """Return a dict of arg.name -> default value for the named command."""
     spec = COMMAND_SPECS[name]
     out: dict[str, object] = {}
@@ -24,7 +24,7 @@ def _defaults(name: str) -> dict[str, object]:
 
 
 def test_install_basic_argv():
-    values = _defaults("install")
+    values = get_defaults("install")
     values["packages"] = "requests"
     argv = build_argv_for_spec(COMMAND_SPECS["install"], values)
     assert argv[0] == "install"
@@ -32,7 +32,7 @@ def test_install_basic_argv():
 
 
 def test_install_upgrade_argv():
-    values = _defaults("install")
+    values = get_defaults("install")
     values["packages"] = "requests"
     values["upgrade"] = True
     argv = build_argv_for_spec(COMMAND_SPECS["install"], values)
@@ -41,7 +41,7 @@ def test_install_upgrade_argv():
 
 
 def test_install_extra_index_emits_flag_per_token():
-    values = _defaults("install")
+    values = get_defaults("install")
     values["packages"] = "requests"
     values["extra_index_url"] = "https://a/simple https://b/simple"
     argv = build_argv_for_spec(COMMAND_SPECS["install"], values)
@@ -51,7 +51,7 @@ def test_install_extra_index_emits_flag_per_token():
 
 
 def test_install_dropdown_only_emits_when_non_default():
-    values = _defaults("install")
+    values = get_defaults("install")
     values["packages"] = "requests"
     # upgrade_strategy default is "only-if-needed" — should NOT be emitted
     argv = build_argv_for_spec(COMMAND_SPECS["install"], values)
@@ -65,7 +65,7 @@ def test_install_dropdown_only_emits_when_non_default():
 
 def test_install_empty_editable_skipped():
     """Empty editable string must NOT inject a stray empty argv entry."""
-    values = _defaults("install")
+    values = get_defaults("install")
     values["packages"] = "requests"
     values["editable"] = ""
     argv = build_argv_for_spec(COMMAND_SPECS["install"], values)
@@ -74,7 +74,7 @@ def test_install_empty_editable_skipped():
 
 
 def test_uninstall_argv():
-    values = _defaults("uninstall")
+    values = get_defaults("uninstall")
     values["packages"] = "requests flask"
     values["yes"] = True
     argv = build_argv_for_spec(COMMAND_SPECS["uninstall"], values)
@@ -85,7 +85,7 @@ def test_uninstall_argv():
 
 
 def test_list_argv_json_format():
-    values = _defaults("list")
+    values = get_defaults("list")
     values["format"] = "json"
     argv = build_argv_for_spec(COMMAND_SPECS["list"], values)
     assert "list" in argv
@@ -94,13 +94,13 @@ def test_list_argv_json_format():
 
 
 def test_list_argv_default_format_omitted():
-    values = _defaults("list")
+    values = get_defaults("list")
     argv = build_argv_for_spec(COMMAND_SPECS["list"], values)
     assert "--format" not in argv
 
 
 def test_show_with_packages():
-    values = _defaults("show")
+    values = get_defaults("show")
     values["packages"] = "requests"
     values["files"] = True
     argv = build_argv_for_spec(COMMAND_SPECS["show"], values)
@@ -110,7 +110,7 @@ def test_show_with_packages():
 
 
 def test_freeze_argv():
-    values = _defaults("freeze")
+    values = get_defaults("freeze")
     values["exclude_editable"] = True
     argv = build_argv_for_spec(COMMAND_SPECS["freeze"], values)
     assert argv[0] == "freeze"
@@ -123,7 +123,7 @@ def test_check_argv():
 
 
 def test_inspect_argv():
-    values = _defaults("inspect")
+    values = get_defaults("inspect")
     values["local"] = True
     argv = build_argv_for_spec(COMMAND_SPECS["inspect"], values)
     assert argv[0] == "inspect"
@@ -131,7 +131,7 @@ def test_inspect_argv():
 
 
 def test_index_versions_argv():
-    values = _defaults("index_versions")
+    values = get_defaults("index_versions")
     values["package"] = "requests"
     values["pre"] = True
     argv = build_argv_for_spec(COMMAND_SPECS["index_versions"], values)
@@ -141,7 +141,7 @@ def test_index_versions_argv():
 
 
 def test_download_argv_with_dest():
-    values = _defaults("download")
+    values = get_defaults("download")
     values["packages"] = "requests"
     values["dest"] = "./wheelhouse"
     argv = build_argv_for_spec(COMMAND_SPECS["download"], values)
@@ -151,7 +151,7 @@ def test_download_argv_with_dest():
 
 
 def test_wheel_argv():
-    values = _defaults("wheel")
+    values = get_defaults("wheel")
     values["packages"] = "requests"
     values["wheel_dir"] = "./wheels"
     argv = build_argv_for_spec(COMMAND_SPECS["wheel"], values)

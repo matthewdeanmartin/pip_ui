@@ -12,10 +12,10 @@
 ## Three-Panel Layout
 
 1. **Left Panel (Command Navigator):** Grouped list of all available `pip` commands.
-2. **Middle Panel (Form & Output):**
-    - **Top:** A dynamic form for configuring the selected command.
-    - **Bottom:** A streaming log of the command's output, including exit codes and metadata.
-3. **Right Panel (Help & Context):** Contextual help, examples, and detailed explanations of what the command and its options do.
+1. **Middle Panel (Form & Output):**
+   - **Top:** A dynamic form for configuring the selected command.
+   - **Bottom:** A streaming log of the command's output, including exit codes and metadata.
+1. **Right Panel (Help & Context):** Contextual help, examples, and detailed explanations of what the command and its options do.
 
 ## No Internal Dependencies
 

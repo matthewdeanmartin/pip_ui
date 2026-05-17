@@ -66,8 +66,10 @@ class PipRunner:
                     **kwargs,
                 ) as process:  # nosec B603
                     self.process = process
-                    assert process.stdout is not None
-                    assert process.stderr is not None
+                    if process.stdout is None or process.stderr is None:
+                        # This should not happen with PIPE, but we check to satisfy Bandit/logic
+                        on_done(-1)
+                        return
 
                     stdout_thread = threading.Thread(
                         target=self.read_stream,

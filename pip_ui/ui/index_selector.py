@@ -18,9 +18,9 @@ WELL_KNOWN_INDEXES: list[tuple[str, str]] = [
     ("piwheels (Raspberry Pi)", "https://www.piwheels.org/simple"),
 ]
 
-_DEFAULT_LABEL = WELL_KNOWN_INDEXES[0][0]
-_CUSTOM_SENTINEL = "<Add custom repo...>"
-_MANAGE_SENTINEL = "<Manage custom repos...>"
+DEFAULT_LABEL = WELL_KNOWN_INDEXES[0][0]
+CUSTOM_SENTINEL = "<Add custom repo...>"
+MANAGE_SENTINEL = "<Manage custom repos...>"
 
 
 class IndexSelector(ttk.Frame):
@@ -39,24 +39,24 @@ class IndexSelector(ttk.Frame):
         **kwargs: Any,
     ) -> None:
         super().__init__(parent, **kwargs)
-        self._settings = settings
-        self._on_change = on_change
-        self._var = tk.StringVar()
-        self._build_ui()
-        self._reload_choices()
-        self._var.trace_add("write", self._on_var_change)
+        self.settings = settings
+        self.on_change = on_change
+        self.var = tk.StringVar()
+        self.build_ui()
+        self.reload_choices()
+        self.var.trace_add("write", self.on_var_change)
 
     # ------------------------------------------------------------------ build
 
-    def _build_ui(self) -> None:
+    def build_ui(self) -> None:
         ttk.Label(self, text="Index:").pack(side=tk.LEFT, padx=(0, 2))
-        self._combo = ttk.Combobox(self, textvariable=self._var, state="readonly", width=32)
-        self._combo.pack(side=tk.LEFT, padx=2)
+        self.combo = ttk.Combobox(self, textvariable=self.var, state="readonly", width=32)
+        self.combo.pack(side=tk.LEFT, padx=2)
 
     # ------------------------------------------------------------------ data
 
-    def _custom_repos(self) -> list[tuple[str, str]]:
-        raw = self._settings.get("custom_indexes", [])
+    def custom_repos(self) -> list[tuple[str, str]]:
+        raw = self.settings.get("custom_indexes", [])
         if not isinstance(raw, list):
             return []
         result: list[tuple[str, str]] = []
@@ -65,70 +65,70 @@ class IndexSelector(ttk.Frame):
                 result.append((item["label"], item["url"]))
         return result
 
-    def _save_custom_repos(self, repos: list[tuple[str, str]]) -> None:
-        self._settings.set("custom_indexes", [{"label": lbl, "url": url} for lbl, url in repos])
+    def save_custom_repos(self, repos: list[tuple[str, str]]) -> None:
+        self.settings.set("custom_indexes", [{"label": lbl, "url": url} for lbl, url in repos])
 
-    def _all_choices(self) -> list[tuple[str, str | None]]:
+    def all_choices(self) -> list[tuple[str, str | None]]:
         choices: list[tuple[str, str | None]] = []
         for label, url in WELL_KNOWN_INDEXES:
             # First entry (PyPI default) maps to None — no flag injected.
-            choices.append((label, url if label != _DEFAULT_LABEL else None))
-        for label, url in self._custom_repos():
+            choices.append((label, url if label != DEFAULT_LABEL else None))
+        for label, url in self.custom_repos():
             choices.append((label, url))
         return choices
 
-    def _reload_choices(self) -> None:
-        choices = self._all_choices()
-        display = [label for label, _ in choices] + [_CUSTOM_SENTINEL, _MANAGE_SENTINEL]
-        current = self._var.get()
-        self._combo.config(values=display)
+    def reload_choices(self) -> None:
+        choices = self.all_choices()
+        display = [label for label, _ in choices] + [CUSTOM_SENTINEL, MANAGE_SENTINEL]
+        current = self.var.get()
+        self.combo.config(values=display)
         if current not in display:
-            self._var.set(_DEFAULT_LABEL)
+            self.var.set(DEFAULT_LABEL)
         # Restore previously saved selection from settings.
-        saved = self._settings.get("active_index_label", _DEFAULT_LABEL)
+        saved = self.settings.get("active_index_label", DEFAULT_LABEL)
         if saved in display:
-            self._var.set(saved)
+            self.var.set(saved)
 
     # ------------------------------------------------------------------ events
 
-    def _on_var_change(self, *_: Any) -> None:
-        selected = self._var.get()
-        if selected == _CUSTOM_SENTINEL:
-            self._add_custom()
+    def on_var_change(self, *_: Any) -> None:
+        selected = self.var.get()
+        if selected == CUSTOM_SENTINEL:
+            self.add_custom()
             return
-        if selected == _MANAGE_SENTINEL:
-            self._manage_custom()
+        if selected == MANAGE_SENTINEL:
+            self.manage_custom()
             return
-        url = self._url_for_label(selected)
-        self._settings.set("active_index_label", selected)
-        self._on_change(url)
+        url = self.url_for_label(selected)
+        self.settings.set("active_index_label", selected)
+        self.on_change(url)
 
-    def _url_for_label(self, label: str) -> str | None:
-        for lbl, url in self._all_choices():
+    def url_for_label(self, label: str) -> str | None:
+        for lbl, url in self.all_choices():
             if lbl == label:
                 return url
         return None
 
     # ----------------------------------------------------------------- dialogs
 
-    def _add_custom(self) -> None:
+    def add_custom(self) -> None:
         label = simpledialog.askstring("Custom Index — Label", "Display name for this index:", parent=self)
         if not label:
-            self._var.set(_DEFAULT_LABEL)
+            self.var.set(DEFAULT_LABEL)
             return
         url = simpledialog.askstring("Custom Index — URL", "Index URL (must end with /simple):", parent=self)
         if not url:
-            self._var.set(_DEFAULT_LABEL)
+            self.var.set(DEFAULT_LABEL)
             return
         url = url.strip().rstrip("/")
-        repos = self._custom_repos()
+        repos = self.custom_repos()
         repos.append((label.strip(), url))
-        self._save_custom_repos(repos)
-        self._reload_choices()
-        self._var.set(label.strip())
+        self.save_custom_repos(repos)
+        self.reload_choices()
+        self.var.set(label.strip())
 
-    def _manage_custom(self) -> None:
-        repos = self._custom_repos()
+    def manage_custom(self) -> None:
+        repos = self.custom_repos()
         win = tk.Toplevel(self)
         win.title("Manage Custom Indexes")
         win.geometry("560x320")
@@ -150,41 +150,41 @@ class IndexSelector(ttk.Frame):
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
 
-        def _populate() -> None:
+        def populate() -> None:
             for row in tree.get_children():
                 tree.delete(row)
             for lbl, url in repos:
                 tree.insert("", tk.END, values=(lbl, url))
 
-        _populate()
+        populate()
 
         btn_row = ttk.Frame(win)
         btn_row.pack(fill=tk.X, padx=8, pady=4)
 
-        def _delete() -> None:
+        def delete() -> None:
             sel = tree.selection()
             if not sel:
                 return
             idx = tree.index(sel[0])
             repos.pop(idx)
-            _populate()
+            populate()
 
-        ttk.Button(btn_row, text="Delete Selected", command=_delete).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_row, text="Delete Selected", command=delete).pack(side=tk.LEFT, padx=2)
 
-        def _close() -> None:
-            self._save_custom_repos(repos)
-            self._reload_choices()
+        def close() -> None:
+            self.save_custom_repos(repos)
+            self.reload_choices()
             win.destroy()
-            self._var.set(_DEFAULT_LABEL)
+            self.var.set(DEFAULT_LABEL)
 
-        ttk.Button(btn_row, text="Close", command=_close).pack(side=tk.RIGHT, padx=2)
-        win.protocol("WM_DELETE_WINDOW", _close)
+        ttk.Button(btn_row, text="Close", command=close).pack(side=tk.RIGHT, padx=2)
+        win.protocol("WM_DELETE_WINDOW", close)
 
     # ----------------------------------------------------------------- public
 
     def current_index_url(self) -> str | None:
         """Return the active ``--index-url`` value, or ``None`` for the default."""
-        selected = self._var.get()
-        if selected in (_CUSTOM_SENTINEL, _MANAGE_SENTINEL):
+        selected = self.var.get()
+        if selected in (CUSTOM_SENTINEL, MANAGE_SENTINEL):
             return None
-        return self._url_for_label(selected)
+        return self.url_for_label(selected)

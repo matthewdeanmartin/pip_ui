@@ -7,6 +7,7 @@
 In the top toolbar, you can select a "Global Requirements" file. This is useful when you are working on a specific project and frequently need to install or update its requirements.
 
 When a global requirements file is selected:
+
 - It is automatically pre-filled into the `Requirements File` field for commands that support it (like `install` or `uninstall`).
 - You can still override this selection on a per-command basis if needed.
 

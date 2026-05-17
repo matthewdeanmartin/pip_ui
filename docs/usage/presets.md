@@ -5,16 +5,16 @@
 ## Saving a Preset
 
 1. Configure a command exactly how you want it (fill in package names, toggle options, etc.).
-2. Don't forget to configure any **Global Options** you want included in the preset.
-3. Click the **Save Preset...** button.
-4. Give your preset a descriptive name (e.g., "Install with Internal Index" or "Dry Run Upgrade All").
+1. Don't forget to configure any **Global Options** you want included in the preset.
+1. Click the **Save Preset...** button.
+1. Give your preset a descriptive name (e.g., "Install with Internal Index" or "Dry Run Upgrade All").
 
 ## Loading a Preset
 
 1. Select the command you want to run.
-2. Click **Load Preset...**
-3. Choose from the list of presets specifically saved for that command.
-4. The form and global options will be instantly populated with your saved settings.
+1. Click **Load Preset...**
+1. Choose from the list of presets specifically saved for that command.
+1. The form and global options will be instantly populated with your saved settings.
 
 ## Managing Presets
 

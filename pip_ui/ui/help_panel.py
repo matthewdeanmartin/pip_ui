@@ -132,7 +132,7 @@ class HelpPanel(ttk.Frame):
         super().__init__(parent, **kwargs)
         self.spec: CommandSpec | None = None
         self.interpreter_info: InterpreterInfo | None = None
-        self._help_cache: dict[tuple[str, str], str] = {}
+        self.help_cache: dict[tuple[str, str], str] = {}
         self.build_ui()
 
     def build_ui(self) -> None:
@@ -235,7 +235,7 @@ class HelpPanel(ttk.Frame):
             return
 
         key = (interpreter_info.path, spec.name)
-        cached = self._help_cache.get(key)
+        cached = self.help_cache.get(key)
         if cached is not None:
             self.set_text(self.command_help_text, cached)
             return
@@ -258,12 +258,12 @@ class HelpPanel(ttk.Frame):
                 output = output.strip() or "(no output from pip help)"
             except (OSError, subprocess.SubprocessError) as exc:
                 output = f"Error fetching pip help: {exc}"
-            self._help_cache[key] = output
-            self.after(0, lambda: self._render_command_help(key, output))
+            self.help_cache[key] = output
+            self.after(0, lambda: self.render_command_help(key, output))
 
         threading.Thread(target=worker, daemon=True, name="pip-ui-help").start()
 
-    def _render_command_help(self, key: tuple[str, str], output: str) -> None:
+    def render_command_help(self, key: tuple[str, str], output: str) -> None:
         # Only render if the user is still looking at the same spec/interpreter.
         if self.spec is None or self.interpreter_info is None:
             return
