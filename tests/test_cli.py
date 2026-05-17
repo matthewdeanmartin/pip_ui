@@ -170,6 +170,37 @@ def test_main_launches_window_and_applies_cli_options(monkeypatch: pytest.Monkey
     assert app.mainloop_called is True
 
 
+def test_main_closes_cleanly_on_keyboard_interrupt(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Ctrl+C while the GUI mainloop is running should close without a traceback."""
+    created: dict[str, object] = {}
+
+    class FakeMainWindow:
+        def __init__(self, *, no_history: bool, safe_mode: bool) -> None:
+            _ = (no_history, safe_mode)
+            created["app"] = self
+            self.closed = False
+
+        def mainloop(self) -> None:
+            raise KeyboardInterrupt
+
+        def on_close(self) -> None:
+            self.closed = True
+
+    fake_module = ModuleType("pip_ui.ui.main_window")
+    cast(Any, fake_module).MainWindow = FakeMainWindow
+
+    monkeypatch.setattr(cli_module, "configure_utf8_stdio", lambda: None)
+    monkeypatch.setattr(importlib.util, "find_spec", lambda name: object())
+    monkeypatch.setitem(sys.modules, "pip_ui.ui.main_window", fake_module)
+    monkeypatch.setattr(sys, "argv", ["pip-ui"])
+
+    cli_module.main()
+
+    app = created["app"]
+    assert isinstance(app, FakeMainWindow)
+    assert app.closed is True
+
+
 def test_run_diagnostics_uses_first_discovered_interpreter(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:

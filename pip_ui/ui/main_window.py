@@ -7,6 +7,7 @@ import os
 import queue
 import sys
 import tkinter as tk
+import webbrowser
 from datetime import datetime
 from tkinter import filedialog, ttk
 from typing import Any
@@ -34,6 +35,9 @@ from pip_ui.ui.global_options_dialog import GlobalOptionsDialog
 from pip_ui.ui.help_panel import HelpPanel
 from pip_ui.ui.interpreter_picker import InterpreterPicker
 from pip_ui.ui.output_panel import OutputPanel
+from pip_ui.ui.cert_tester import CertTesterDialog
+from pip_ui.ui.index_selector import IndexSelector
+from pip_ui.ui.proxy_dialog import ProxyDialog
 from pip_ui.ui.requirements_picker import RequirementsPicker
 
 
@@ -93,6 +97,7 @@ class MainWindow(tk.Tk):
         self.global_options: dict[str, Any] = merged_globals
 
         self.global_requirements_file: str | None = None
+        self.active_index_url: str | None = None
 
         self.show_secrets = tk.BooleanVar(value=bool(self.settings.get("show_secrets", False)))
         self.status_interpreter_var = tk.StringVar(value="No interpreter selected")
@@ -149,11 +154,17 @@ class MainWindow(tk.Tk):
         menubar.add_cascade(label="Tools", menu=tools_menu)
         tools_menu.add_command(label="Global Options...", command=self.open_global_options_dialog)
         tools_menu.add_separator()
+        tools_menu.add_command(label="HTTPS Certificate Tester...", command=self.open_cert_tester)
+        tools_menu.add_command(label="HTTP Proxy Configuration...", command=self.open_proxy_dialog)
+        tools_menu.add_separator()
         tools_menu.add_command(label="Check for Updates", command=self.manual_check_updates)
         tools_menu.add_command(label="Upgrade pip-ui", command=self.self_upgrade)
 
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label="pip Documentation", command=self.open_pip_documentation)
+        help_menu.add_command(label="pip Release Notes", command=self.open_pip_release_notes)
+        help_menu.add_separator()
         help_menu.add_command(label="About", command=self.show_about)
 
     # --------------------------------------------------------------- toolbar
@@ -171,12 +182,19 @@ class MainWindow(tk.Tk):
         workdir_entry.pack(side=tk.LEFT, padx=2)
         ttk.Button(toolbar, text="Browse...", command=self.browse_workdir).pack(side=tk.LEFT, padx=2)
 
-        # Second row: requirements picker + Global Options button.
+        # Second row: requirements picker + index selector + Global Options button.
         toolbar2 = ttk.Frame(self, relief=tk.GROOVE, borderwidth=1)
         toolbar2.pack(side=tk.TOP, fill=tk.X, padx=2, pady=(0, 2))
 
         self.requirements_picker = RequirementsPicker(toolbar2, on_change=self.on_requirements_change)
         self.requirements_picker.pack(side=tk.LEFT, padx=4)
+
+        self.index_selector = IndexSelector(
+            toolbar2,
+            settings=self.settings,
+            on_change=self.on_index_change,
+        )
+        self.index_selector.pack(side=tk.LEFT, padx=4)
 
         ttk.Button(
             toolbar2,
@@ -439,7 +457,15 @@ class MainWindow(tk.Tk):
 
         cwd = self.workdir_var.get() or os.getcwd()
         env = self.runtime_env_for(command_name)
-        full_argv = self.runner.build_argv(self.current_interpreter.path, pip_args)
+        effective_pip_args = list(pip_args)
+        if (
+            self.active_index_url is not None
+            and "--index-url" not in effective_pip_args
+            and "-i" not in effective_pip_args
+            and command_name in {"install", "download", "wheel", "index_versions"}
+        ):
+            effective_pip_args.extend(["--index-url", self.active_index_url])
+        full_argv = self.runner.build_argv(self.current_interpreter.path, effective_pip_args)
 
         self.output_panel.clear()
         self.stderr_buffer = []
@@ -474,7 +500,7 @@ class MainWindow(tk.Tk):
         self.output_panel.set_running(True)
         self.runner.run(full_argv, cwd, enqueue_stdout, enqueue_stderr, on_done, env=env)
 
-        self.run_pip_args = pip_args
+        self.run_pip_args = effective_pip_args
         self.run_label = label
         self.run_redacted_argv = redacted_argv
         self.run_full_argv = full_argv
@@ -696,14 +722,61 @@ class MainWindow(tk.Tk):
 
     # --------------------------------------------------------------- misc
 
+    def on_index_change(self, url: str | None) -> None:
+        self.active_index_url = url
+        if self.command_form is not None:
+            self.command_form.update_preview()
+
+    def open_cert_tester(self) -> None:
+        python_path = self.current_interpreter.path if self.current_interpreter else None
+        CertTesterDialog(self, python_path=python_path)
+
+    def open_proxy_dialog(self) -> None:
+        python_path = self.current_interpreter.path if self.current_interpreter else None
+        current_proxy = self.global_options.get("g_proxy") or None
+
+        def apply_proxy(proxy: str | None) -> None:
+            self.global_options["g_proxy"] = proxy
+            self.settings.set("global_options", self.global_options)
+            self.refresh_global_options_summary()
+            if self.command_form is not None:
+                self.command_form.refresh_globals_summary()
+                self.command_form.update_preview()
+
+        ProxyDialog(self, python_path=python_path, current_proxy=current_proxy, on_apply=apply_proxy)
+
     def show_config_view(self) -> None:
         ConfigView(self, interpreter_info=self.current_interpreter, show_secrets=bool(self.show_secrets.get()))
+
+    def open_url(self, url: str) -> None:
+        try:
+            webbrowser.open(url, new=2)
+        except webbrowser.Error as exc:
+            error_dialog(self, "Open Link Failed", f"Could not open link:\n{url}\n\n{exc}")
+
+    def open_pip_documentation(self) -> None:
+        self.open_url("https://pip.pypa.io/en/stable/")
+
+    def open_pip_release_notes(self) -> None:
+        self.open_url(self.pip_release_notes_url())
+
+    def pip_release_notes_url(self) -> str:
+        pip_version = self.current_interpreter.pip_version if self.current_interpreter is not None else ""
+        anchor = pip_release_notes_anchor(pip_version)
+        return f"https://pip.pypa.io/en/stable/news/#{anchor}" if anchor else "https://pip.pypa.io/en/stable/news/"
 
     def show_about(self) -> None:
         info_dialog(
             self,
             "About pip-ui",
-            f"pip-ui v{__version__}\n\nA Tkinter GUI for pip.\nRuns: python -m pip\n\nNo pip internals are used.",
+            (
+                f"pip-ui v{__version__}\n\n"
+                "A Tkinter GUI for pip.\n"
+                "Runs: python -m pip\n\n"
+                "pip is a project of the Python Package Authority (PyPA).\n"
+                "pip-ui-tkinter is an independent project and is not affiliated with or maintained by PyPA.\n\n"
+                "No pip internals are used."
+            ),
         )
 
     def copy_selection(self) -> None:
@@ -725,3 +798,12 @@ class MainWindow(tk.Tk):
         self.settings.set("window_width", self.winfo_width())
         self.settings.set("window_height", self.winfo_height())
         self.destroy()
+
+
+def pip_release_notes_anchor(pip_version: str) -> str | None:
+    normalized = pip_version.strip().lstrip("v").replace(".", "-")
+    if not normalized:
+        return None
+    if any(ch not in "0123456789-" for ch in normalized):
+        return None
+    return f"v{normalized}"

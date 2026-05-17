@@ -144,6 +144,7 @@ class CommandForm(ttk.Frame):
         self.run_btn = ttk.Button(btn_frame, text="Run (Ctrl+R)", command=self.do_run, state=tk.DISABLED)
         self.run_btn.pack(side=tk.LEFT, padx=2)
         ttk.Button(btn_frame, text="Copy Command", command=self.copy_command).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text="Copy as Python", command=self.copy_as_python).pack(side=tk.LEFT, padx=2)
         ttk.Button(btn_frame, text="Reset Form", command=self.reset).pack(side=tk.LEFT, padx=2)
         self.dry_run_btn = ttk.Button(btn_frame, text="Dry Run", command=self.do_dry_run, state=tk.DISABLED)
         self.dry_run_btn.pack(side=tk.LEFT, padx=2)
@@ -328,6 +329,32 @@ class CommandForm(ttk.Frame):
         text = runner.format_command(["python", "-m", "pip", *argv])
         self.clipboard_clear()
         self.clipboard_append(text)
+
+    def copy_as_python(self) -> None:
+        """Generate and copy subprocess.run() Python code for the current command."""
+        argv = self.get_argv()
+        full = ["sys.executable", "-m", "pip", *argv]
+        # Build a repr-style list literal for the argv.
+        items = ", ".join(f'"{a}"' for a in full)
+        items = items.replace('"sys.executable"', "sys.executable")
+        code_lines = [
+            "import subprocess",
+            "import sys",
+            "",
+            "result = subprocess.run(",
+            f"    [{items}],",
+            "    capture_output=True,",
+            '    text=True,',
+            "    check=False,",
+            ")",
+            "print(result.stdout)",
+            "if result.returncode != 0:",
+            "    print(result.stderr)",
+        ]
+        code = "\n".join(code_lines)
+        self.clipboard_clear()
+        self.clipboard_append(code)
+        info_dialog(self, "Copied", "Python subprocess code copied to clipboard.")
 
     def apply_global_requirements(self, path: str | None) -> None:
         """Push the toolbar-selected requirements file onto the current form's field."""

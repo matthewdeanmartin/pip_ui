@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import tkinter as tk
+from types import SimpleNamespace
 from tkinter import ttk
 from typing import Any
 from typing import cast
@@ -16,6 +17,7 @@ from pip_ui.models import InterpreterInfo
 from pip_ui.ui.command_form import CommandForm
 from pip_ui.ui.config_view import ConfigView
 from pip_ui.ui.global_options_dialog import GlobalOptionsDialog
+from pip_ui.ui.main_window import MainWindow, pip_release_notes_anchor
 from pip_ui.ui.requirements_picker import RequirementsPicker
 
 
@@ -170,3 +172,43 @@ def test_requirements_picker_selection(root, tmp_path):
     picker.on_combo_select(None)
 
     on_change.assert_called_with(str(req_path))
+
+
+def test_pip_release_notes_anchor_formats_version() -> None:
+    """Release note anchors should match the pip docs heading format."""
+    assert pip_release_notes_anchor("26.1") == "v26-1"
+    assert pip_release_notes_anchor("v25.3") == "v25-3"
+    assert pip_release_notes_anchor("unknown") is None
+    assert pip_release_notes_anchor("25.1.dev0") is None
+
+
+def test_pip_release_notes_url_uses_selected_interpreter_version() -> None:
+    """The Help menu release notes link should target the selected pip version when available."""
+    info = InterpreterInfo(
+        path="C:\\Python313\\python.exe",
+        version="3.13.3",
+        pip_version="26.1",
+        is_venv=False,
+        prefix="C:\\Python313",
+        base_prefix="C:\\Python313",
+        env_type="system",
+    )
+    fake_window = SimpleNamespace(current_interpreter=info)
+
+    assert MainWindow.pip_release_notes_url(cast(Any, fake_window)) == "https://pip.pypa.io/en/stable/news/#v26-1"
+
+
+def test_pip_release_notes_url_falls_back_to_news_index() -> None:
+    """Unknown or non-final pip versions should fall back to the release notes landing page."""
+    info = InterpreterInfo(
+        path="C:\\Python313\\python.exe",
+        version="3.13.3",
+        pip_version="unknown",
+        is_venv=False,
+        prefix="C:\\Python313",
+        base_prefix="C:\\Python313",
+        env_type="system",
+    )
+    fake_window = SimpleNamespace(current_interpreter=info)
+
+    assert MainWindow.pip_release_notes_url(cast(Any, fake_window)) == "https://pip.pypa.io/en/stable/news/"

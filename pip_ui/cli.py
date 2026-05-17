@@ -81,7 +81,10 @@ def main() -> None:
         app.workdir_var.set(args.working_directory)
         app.status_workdir_var.set(args.working_directory)
 
-    app.mainloop()
+    try:
+        app.mainloop()
+    except KeyboardInterrupt:
+        app.on_close()
 
 
 def run_diagnostics(interpreter_path: str | None) -> None:
