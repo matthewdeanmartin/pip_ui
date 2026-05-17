@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from pip_ui.encoding import utf8_subprocess_kwargs
 from pip_ui.safety import redact_url
 
 PYTHON_ENV_VARS = [
@@ -71,7 +72,7 @@ class ConfigInspector:
             result = subprocess.run(
                 argv,
                 capture_output=True,
-                text=True,
+                **utf8_subprocess_kwargs(),
                 check=False,
                 shell=False,
             )  # nosec B603

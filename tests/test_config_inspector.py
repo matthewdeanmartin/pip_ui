@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+import subprocess
 
 import pytest
 
@@ -90,3 +91,25 @@ def test_detect_index_info_reads_env_values(monkeypatch: pytest.MonkeyPatch) -> 
     assert info.find_links == ["https://wheels/simple"]
     assert info.no_index is True
     assert info.has_credentials is True
+
+
+def test_run_pip_command_uses_utf8_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        captured.update(kwargs)
+        return subprocess.CompletedProcess(args=["python"], returncode=0, stdout="{}", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    inspector = ConfigInspector(sys.executable)
+    stdout, stderr, returncode = inspector.run_pip_command(["inspect"])
+
+    assert stdout == "{}"
+    assert stderr == ""
+    assert returncode == 0
+    assert captured["text"] is True
+    assert captured["encoding"] == "utf-8"
+    assert captured["errors"] == "replace"
+    assert captured["env"]["PYTHONUTF8"] == "1"
+    assert captured["env"]["PYTHONIOENCODING"] == "utf-8"

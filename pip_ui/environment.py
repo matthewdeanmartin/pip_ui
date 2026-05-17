@@ -7,7 +7,9 @@ import shutil
 import subprocess  # nosec B404
 import sys
 from pathlib import Path
+from typing import cast
 
+from pip_ui.encoding import utf8_subprocess_kwargs
 from pip_ui.models import InterpreterInfo
 
 
@@ -66,7 +68,7 @@ class InterpreterDiscovery:
             result = subprocess.run(
                 [path, "-c", "import sys; print(sys.version.split()[0]); print(sys.prefix); print(sys.base_prefix)"],
                 capture_output=True,
-                text=True,
+                **utf8_subprocess_kwargs(),
                 check=False,
                 shell=False,
                 timeout=10,
@@ -98,13 +100,16 @@ class InterpreterDiscovery:
 
     def get_pip_version(self, path: str) -> str:
         try:
-            result = subprocess.run(
-                [path, "-m", "pip", "--version"],
-                capture_output=True,
-                text=True,
-                check=False,
-                shell=False,
-                timeout=10,
+            result = cast(
+                subprocess.CompletedProcess[str],
+                subprocess.run(
+                    [path, "-m", "pip", "--version"],
+                    capture_output=True,
+                    **utf8_subprocess_kwargs(),
+                    check=False,
+                    shell=False,
+                    timeout=10,
+                ),
             )  # nosec B603
             if result.returncode == 0:
                 parts = result.stdout.strip().split()

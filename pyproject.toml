@@ -30,6 +30,8 @@ issues = "https://github.com/matthewdeanmartin/pip_ui/issues/"
 
 [project.scripts]
 pip_ui = "pip_ui.cli:main"
+pip-ui = "pip_ui.cli:main"
+
 
 [build-system]
 requires = ["hatchling>=1.27.0"]

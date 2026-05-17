@@ -494,7 +494,7 @@ COMMAND_SPECS: dict[str, CommandSpec] = {
                 field_type="dir",
                 label="Destination Directory",
                 help="Download packages into this directory.",
-                default=None,
+                default="./downloads",
             ),
             ArgSpec(
                 name="requirements_file",
@@ -607,7 +607,7 @@ COMMAND_SPECS: dict[str, CommandSpec] = {
                 field_type="dir",
                 label="Wheel Directory",
                 help="Output wheels into this directory.",
-                default=None,
+                default="./dist",
             ),
             ArgSpec(
                 name="requirements_file",

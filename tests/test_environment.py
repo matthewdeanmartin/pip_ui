@@ -72,3 +72,22 @@ def test_get_pip_version_returns_unknown_on_probe_error(monkeypatch: pytest.Monk
     monkeypatch.setattr(subprocess, "run", raise_os_error)
 
     assert discovery.get_pip_version(sys.executable) == "unknown"
+
+
+def test_get_pip_version_uses_utf8_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        captured.update(kwargs)
+        return subprocess.CompletedProcess(args=["python"], returncode=0, stdout="pip 25.1", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    discovery = InterpreterDiscovery()
+
+    assert discovery.get_pip_version(sys.executable) == "25.1"
+    assert captured["text"] is True
+    assert captured["encoding"] == "utf-8"
+    assert captured["errors"] == "replace"
+    assert captured["env"]["PYTHONUTF8"] == "1"
+    assert captured["env"]["PYTHONIOENCODING"] == "utf-8"

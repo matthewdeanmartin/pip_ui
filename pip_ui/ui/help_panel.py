@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+import subprocess  # nosec B404
+import threading
 import tkinter as tk
 from tkinter import ttk
 from typing import Any
 
+from pip_ui.encoding import utf8_subprocess_kwargs
 from pip_ui.models import CommandSpec, InterpreterInfo, SafetyLevel
 from pip_ui.runner import PipRunner
 from pip_ui.safety import check_global_install, classify_command, collect_argv_warnings
@@ -99,12 +102,37 @@ TROUBLESHOOTING: dict[str, str] = {
     ),
 }
 
+# Maps a command spec name to the argv that ``pip help`` understands. Most pip
+# subcommands accept their own help; for grouped ones (config, cache, index) we
+# fall back to the parent command's help.
+HELP_ARGV: dict[str, list[str]] = {
+    "config_list": ["help", "config"],
+    "config_debug": ["help", "config"],
+    "config_get": ["help", "config"],
+    "config_set": ["help", "config"],
+    "config_unset": ["help", "config"],
+    "config_edit": ["help", "config"],
+    "cache_dir": ["help", "cache"],
+    "cache_info": ["help", "cache"],
+    "cache_list": ["help", "cache"],
+    "cache_remove": ["help", "cache"],
+    "cache_purge": ["help", "cache"],
+    "index_versions": ["help", "index"],
+    "version": ["--version"],
+    "help": ["help"],
+}
+
+
+def help_argv_for(spec_name: str) -> list[str]:
+    return list(HELP_ARGV.get(spec_name, ["help", spec_name]))
+
 
 class HelpPanel(ttk.Frame):
     def __init__(self, parent: tk.Misc, **kwargs: Any) -> None:
         super().__init__(parent, **kwargs)
         self.spec: CommandSpec | None = None
         self.interpreter_info: InterpreterInfo | None = None
+        self._help_cache: dict[tuple[str, str], str] = {}
         self.build_ui()
 
     def build_ui(self) -> None:
@@ -113,6 +141,7 @@ class HelpPanel(ttk.Frame):
 
         self.overview_text = self.make_text_tab("Overview")
         self.command_text = self.make_text_tab("Generated Command")
+        self.command_help_text = self.make_text_tab("Command Help")
         self.config_text = self.make_text_tab("Active Config")
         self.safety_text = self.make_text_tab("Safety")
         self.examples_text = self.make_text_tab("Examples")
@@ -162,6 +191,9 @@ class HelpPanel(ttk.Frame):
         )
         self.set_text(self.command_text, body)
 
+        # Command Help tab — show pip's own help for the current (sub)command.
+        self.populate_command_help(spec, interpreter_info)
+
         # Active config snapshot.
         cfg_lines: list[str] = []
         if interpreter_info is None:
@@ -196,3 +228,45 @@ class HelpPanel(ttk.Frame):
 
         trouble = TROUBLESHOOTING.get(spec.name, "No known issues for this command.")
         self.set_text(self.troubleshooting_text, trouble)
+
+    def populate_command_help(self, spec: CommandSpec, interpreter_info: InterpreterInfo | None) -> None:
+        if interpreter_info is None:
+            self.set_text(self.command_help_text, "Select a Python interpreter to load pip's help text.")
+            return
+
+        key = (interpreter_info.path, spec.name)
+        cached = self._help_cache.get(key)
+        if cached is not None:
+            self.set_text(self.command_help_text, cached)
+            return
+
+        self.set_text(self.command_help_text, "Loading pip help...")
+
+        argv = [interpreter_info.path, "-m", "pip", *help_argv_for(spec.name)]
+
+        def worker() -> None:
+            try:
+                result = subprocess.run(
+                    argv,
+                    capture_output=True,
+                    **utf8_subprocess_kwargs(),
+                    check=False,
+                    shell=False,
+                    timeout=15,
+                )  # nosec B603
+                output = (result.stdout or "") + (("\n" + result.stderr) if result.stderr else "")
+                output = output.strip() or "(no output from pip help)"
+            except (OSError, subprocess.SubprocessError) as exc:
+                output = f"Error fetching pip help: {exc}"
+            self._help_cache[key] = output
+            self.after(0, lambda: self._render_command_help(key, output))
+
+        threading.Thread(target=worker, daemon=True, name="pip-ui-help").start()
+
+    def _render_command_help(self, key: tuple[str, str], output: str) -> None:
+        # Only render if the user is still looking at the same spec/interpreter.
+        if self.spec is None or self.interpreter_info is None:
+            return
+        if (self.interpreter_info.path, self.spec.name) != key:
+            return
+        self.set_text(self.command_help_text, output)

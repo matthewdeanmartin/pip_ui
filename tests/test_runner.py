@@ -1,5 +1,10 @@
 """Tests for runner module."""
 
+from __future__ import annotations
+
+import subprocess
+import threading
+
 from pip_ui.runner import PipRunner
 
 
@@ -55,3 +60,43 @@ def test_format_command_quotes_spaces():
 def test_cancel_no_process():
     runner = PipRunner()
     runner.cancel()
+
+
+def test_run_uses_utf8_defaults(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+    done = threading.Event()
+
+    class FakeStream:
+        def readline(self) -> str:
+            return ""
+
+    class FakePopen:
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            captured.update(kwargs)
+            self.stdout = FakeStream()
+            self.stderr = FakeStream()
+            self.returncode = 0
+
+        def __enter__(self) -> FakePopen:
+            return self
+
+        def __exit__(self, exc_type, exc, tb) -> None:
+            return None
+
+        def poll(self) -> int | None:
+            return self.returncode
+
+        def wait(self) -> int:
+            return self.returncode
+
+    monkeypatch.setattr(subprocess, "Popen", FakePopen)
+
+    runner = PipRunner()
+    runner.run(["python", "-m", "pip", "list"], ".", lambda _line: None, lambda _line: None, lambda _code: done.set())
+
+    assert done.wait(timeout=2)
+    assert captured["text"] is True
+    assert captured["encoding"] == "utf-8"
+    assert captured["errors"] == "replace"
+    assert captured["env"]["PYTHONUTF8"] == "1"
+    assert captured["env"]["PYTHONIOENCODING"] == "utf-8"

@@ -18,8 +18,19 @@ from pip_ui.models import ArgSpec, CommandSpec
 from pip_ui.presets import PresetStore
 from pip_ui.runner import PipRunner
 from pip_ui.ui.dialogs import info_dialog
+from pip_ui.ui.global_options_dialog import GlobalOptionsDialog, summarize_globals
 
 MONO_FONT = ("Consolas", 10)
+
+# Field name on per-command forms that means "requirements file". When the user
+# picks a global requirements file in the toolbar, we propagate it onto these
+# fields (which the user can still override per command).
+REQUIREMENTS_FIELD_NAME = "requirements_file"
+
+
+def default_global_values() -> dict[str, Any]:
+    """Return a values dict matching every GLOBAL_OPTIONS default."""
+    return {arg.name: arg.default for arg in GLOBAL_OPTIONS}
 
 
 class FieldWidget:
@@ -97,50 +108,39 @@ class CommandForm(ttk.Frame):
         parent: tk.Misc,
         on_run: Callable[[list[str], str], None],
         on_form_change: Callable[[], None] | None = None,
+        global_values_provider: Callable[[], dict[str, Any]] | None = None,
+        on_open_global_options: Callable[[], None] | None = None,
+        global_requirements_provider: Callable[[], str | None] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(parent, **kwargs)
         self.on_run = on_run
         self.on_form_change = on_form_change
+        self.global_values_provider = global_values_provider or default_global_values
+        self.on_open_global_options = on_open_global_options
+        self.global_requirements_provider = global_requirements_provider or (lambda: None)
         self.spec: CommandSpec | None = None
         self.field_widgets: list[FieldWidget] = []
-        self.global_widgets: list[FieldWidget] = []
         self.raw_extra_var = tk.StringVar(value="")
         self.presets = PresetStore()
         self.build_ui()
 
     def build_ui(self) -> None:
         header = ttk.Frame(self)
-        header.pack(fill=tk.X, padx=8, pady=4)
+        header.pack(side=tk.TOP, fill=tk.X, padx=8, pady=4)
         self.title_label = ttk.Label(header, text="Select a command", font=("TkDefaultFont", 12, "bold"))
         self.title_label.pack(anchor=tk.W)
         self.desc_label = ttk.Label(header, text="", wraplength=500, justify=tk.LEFT)
         self.desc_label.pack(anchor=tk.W)
 
-        ttk.Separator(self, orient=tk.HORIZONTAL).pack(fill=tk.X, padx=4, pady=2)
+        ttk.Separator(self, orient=tk.HORIZONTAL).pack(side=tk.TOP, fill=tk.X, padx=4, pady=2)
 
-        self.form_canvas = tk.Canvas(self, borderwidth=0, highlightthickness=0)
-        self.form_scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.form_canvas.yview)
-        self.form_canvas.configure(yscrollcommand=self.form_scrollbar.set)
-        self.form_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.form_canvas.pack(fill=tk.BOTH, expand=True)
-        self.fields_frame = ttk.Frame(self.form_canvas)
-        self.form_canvas_window = self.form_canvas.create_window((0, 0), window=self.fields_frame, anchor=tk.NW)
-        self.fields_frame.bind("<Configure>", self.on_fields_configure)
-        self.form_canvas.bind("<Configure>", self.on_canvas_configure)
-        # Mouse wheel scrolling on the canvas
-        self.form_canvas.bind("<Enter>", lambda e: self.form_canvas.bind_all("<MouseWheel>", self.on_mouse_wheel))
-        self.form_canvas.bind("<Leave>", lambda e: self.form_canvas.unbind_all("<MouseWheel>"))
-
-        preview_frame = ttk.LabelFrame(self, text="Command Preview")
-        preview_frame.pack(fill=tk.X, padx=8, pady=4)
-        self.preview_shell = tk.Text(preview_frame, height=2, font=MONO_FONT, wrap=tk.WORD, state=tk.DISABLED)
-        self.preview_shell.pack(fill=tk.X, padx=4, pady=2)
-        self.preview_argv = tk.Text(preview_frame, height=3, font=MONO_FONT, wrap=tk.WORD, state=tk.DISABLED)
-        self.preview_argv.pack(fill=tk.X, padx=4, pady=2)
-
+        # Pack the bottom strip first (bottom → up) so it reserves its space
+        # before the scrollable canvas claims the rest. Without this, an
+        # `expand=True` canvas plus `expand=False` button row leaves the
+        # buttons clipped off the bottom of the pane.
         btn_frame = ttk.Frame(self)
-        btn_frame.pack(fill=tk.X, padx=8, pady=4)
+        btn_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=8, pady=4)
         self.run_btn = ttk.Button(btn_frame, text="Run (Ctrl+R)", command=self.do_run, state=tk.DISABLED)
         self.run_btn.pack(side=tk.LEFT, padx=2)
         ttk.Button(btn_frame, text="Copy Command", command=self.copy_command).pack(side=tk.LEFT, padx=2)
@@ -150,6 +150,45 @@ class CommandForm(ttk.Frame):
         ttk.Button(btn_frame, text="Save Preset...", command=self.save_preset).pack(side=tk.LEFT, padx=2)
         ttk.Button(btn_frame, text="Load Preset...", command=self.load_preset).pack(side=tk.LEFT, padx=2)
 
+        preview_frame = ttk.LabelFrame(self, text="Command Preview")
+        preview_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=8, pady=4)
+        self.preview_shell = tk.Text(preview_frame, height=2, font=MONO_FONT, wrap=tk.WORD, state=tk.DISABLED)
+        self.preview_shell.pack(fill=tk.X, padx=4, pady=2)
+        self.preview_argv = tk.Text(preview_frame, height=3, font=MONO_FONT, wrap=tk.WORD, state=tk.DISABLED)
+        self.preview_argv.pack(fill=tk.X, padx=4, pady=2)
+
+        globals_frame = ttk.Frame(self)
+        globals_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=8, pady=2)
+        ttk.Button(
+            globals_frame,
+            text="Global Options...",
+            command=self.open_global_options,
+        ).pack(side=tk.LEFT, padx=4, pady=2)
+        self.globals_summary_var = tk.StringVar(value="(all defaults)")
+        ttk.Label(
+            globals_frame,
+            textvariable=self.globals_summary_var,
+            foreground="#444",
+            wraplength=600,
+            justify=tk.LEFT,
+        ).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=4)
+
+        # Now the scrollable fields area fills whatever space is left.
+        canvas_host = ttk.Frame(self)
+        canvas_host.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.form_scrollbar = ttk.Scrollbar(canvas_host, orient=tk.VERTICAL)
+        self.form_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.form_canvas = tk.Canvas(canvas_host, borderwidth=0, highlightthickness=0)
+        self.form_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.form_canvas.configure(yscrollcommand=self.form_scrollbar.set)
+        self.form_scrollbar.config(command=self.form_canvas.yview)
+        self.fields_frame = ttk.Frame(self.form_canvas)
+        self.form_canvas_window = self.form_canvas.create_window((0, 0), window=self.fields_frame, anchor=tk.NW)
+        self.fields_frame.bind("<Configure>", self.on_fields_configure)
+        self.form_canvas.bind("<Configure>", self.on_canvas_configure)
+        self.form_canvas.bind("<Enter>", lambda e: self.form_canvas.bind_all("<MouseWheel>", self.on_mouse_wheel))
+        self.form_canvas.bind("<Leave>", lambda e: self.form_canvas.unbind_all("<MouseWheel>"))
+
     def on_fields_configure(self, _event: Any) -> None:
         self.form_canvas.configure(scrollregion=self.form_canvas.bbox("all"))
 
@@ -157,7 +196,6 @@ class CommandForm(ttk.Frame):
         self.form_canvas.itemconfig(self.form_canvas_window, width=event.width)
 
     def on_mouse_wheel(self, event: Any) -> None:
-        # Windows / macOS use event.delta; X11 sends Button-4/5 instead.
         delta = -1 if getattr(event, "delta", 0) > 0 else 1
         self.form_canvas.yview_scroll(delta, "units")
 
@@ -178,7 +216,6 @@ class CommandForm(ttk.Frame):
         self.title_label.config(text=spec.label)
         self.desc_label.config(text=spec.description)
         self.field_widgets = []
-        self.global_widgets = []
 
         for widget in self.fields_frame.winfo_children():
             widget.destroy()
@@ -206,27 +243,26 @@ class CommandForm(ttk.Frame):
         self.raw_extra_var.trace_add("write", lambda *a: self.update_preview())
         row += 1
 
-        # Global / Advanced options block.
-        adv = ttk.LabelFrame(self.fields_frame, text="Global / Advanced Options (apply to most pip commands)")
-        adv.grid(row=row, column=0, columnspan=3, sticky=tk.EW, padx=4, pady=6)
-        adv.columnconfigure(1, weight=1)
-        for i, garg in enumerate(GLOBAL_OPTIONS):
-            fw = self.add_field(adv, garg, i)
-            self.global_widgets.append(fw)
-        row += 1
-
         self.fields_frame.columnconfigure(1, weight=1)
+
+        # Pre-fill requirements_file from the global toolbar selection (per spec).
+        global_req = self.global_requirements_provider()
+        if global_req:
+            for fw in self.field_widgets:
+                if fw.arg.name == REQUIREMENTS_FIELD_NAME and fw.get_value() in (None, ""):
+                    fw.set_value(global_req)
 
         self.run_btn.config(state=tk.NORMAL)
         self.dry_run_btn.config(state=tk.NORMAL if spec.supports_dry_run else tk.DISABLED)
         self.raw_extra_var.set("")
+        self.refresh_globals_summary()
         self.update_preview()
 
     def collect_values(self) -> dict[str, Any]:
         return {fw.arg.name: fw.get_value() for fw in self.field_widgets}
 
     def collect_global_values(self) -> dict[str, Any]:
-        return {fw.arg.name: fw.get_value() for fw in self.global_widgets}
+        return dict(self.global_values_provider())
 
     def get_argv(self) -> list[str]:
         if self.spec is None:
@@ -235,6 +271,17 @@ class CommandForm(ttk.Frame):
         argv += render_global_args(self.collect_global_values())
         argv += parse_raw_extra(self.raw_extra_var.get())
         return argv
+
+    def refresh_globals_summary(self) -> None:
+        chips = summarize_globals(self.collect_global_values())
+        if not chips:
+            self.globals_summary_var.set("(all defaults)")
+        else:
+            self.globals_summary_var.set("  •  ".join(chips))
+
+    def open_global_options(self) -> None:
+        if self.on_open_global_options is not None:
+            self.on_open_global_options()
 
     def update_preview(self) -> None:
         argv = self.get_argv()
@@ -257,8 +304,6 @@ class CommandForm(ttk.Frame):
 
     def reset(self) -> None:
         for fw in self.field_widgets:
-            fw.reset()
-        for fw in self.global_widgets:
             fw.reset()
         self.raw_extra_var.set("")
         self.update_preview()
@@ -283,6 +328,14 @@ class CommandForm(ttk.Frame):
         text = runner.format_command(["python", "-m", "pip", *argv])
         self.clipboard_clear()
         self.clipboard_append(text)
+
+    def apply_global_requirements(self, path: str | None) -> None:
+        """Push the toolbar-selected requirements file onto the current form's field."""
+        if not path:
+            return
+        for fw in self.field_widgets:
+            if fw.arg.name == REQUIREMENTS_FIELD_NAME and fw.get_value() in (None, ""):
+                fw.set_value(path)
 
     def save_preset(self) -> None:
         if self.spec is None:
@@ -322,14 +375,10 @@ class CommandForm(ttk.Frame):
                 return
             values = preset.get("values", {})
             fields = values.get("fields", {})
-            globals_ = values.get("globals", {})
             raw = values.get("raw", "")
             for fw in self.field_widgets:
                 if fw.arg.name in fields:
                     fw.set_value(fields[fw.arg.name])
-            for fw in self.global_widgets:
-                if fw.arg.name in globals_:
-                    fw.set_value(globals_[fw.arg.name])
             self.raw_extra_var.set(str(raw or ""))
             win.destroy()
             self.update_preview()

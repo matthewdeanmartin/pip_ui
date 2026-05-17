@@ -5,8 +5,10 @@ from __future__ import annotations
 import re
 import subprocess  # nosec B404
 import threading
-from typing import TextIO
 from collections.abc import Callable
+from typing import TextIO
+
+from pip_ui.encoding import utf8_subprocess_kwargs
 
 CRED_RE = re.compile(r"(://)[^:@/\s]+:[^@/\s]+@")
 
@@ -43,19 +45,25 @@ class PipRunner:
         on_stdout: Callable[[str], None],
         on_stderr: Callable[[str], None],
         on_done: Callable[[int], None],
+        env: dict[str, str] | None = None,
     ) -> None:
         self.cancelled = False
         self.killed = False
 
         def worker() -> None:
+            kwargs = utf8_subprocess_kwargs()
+            if env is not None:
+                merged = dict(kwargs.get("env") or {})
+                merged.update(env)
+                kwargs["env"] = merged
             try:
                 with subprocess.Popen(
                     argv,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
-                    text=True,
                     cwd=cwd,
                     shell=False,
+                    **kwargs,
                 ) as process:  # nosec B603
                     self.process = process
                     assert process.stdout is not None

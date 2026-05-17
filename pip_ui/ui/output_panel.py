@@ -129,6 +129,32 @@ class OutputPanel(ttk.Frame):
             widget.delete("1.0", tk.END)
             widget.configure(state=tk.DISABLED)
 
+    def snapshot(self) -> dict[str, str]:
+        """Return the current text in every tab so a caller can restore it later."""
+        return {
+            "combined": self.combined_text.get("1.0", tk.END),
+            "stdout": self.stdout_text.get("1.0", tk.END),
+            "stderr": self.stderr_text.get("1.0", tk.END),
+            "info": self.info_text.get("1.0", tk.END),
+        }
+
+    def restore(self, snapshot: dict[str, str]) -> None:
+        """Replace each tab's contents with the strings from snapshot()."""
+        mapping = (
+            ("combined", self.combined_text),
+            ("stdout", self.stdout_text),
+            ("stderr", self.stderr_text),
+            ("info", self.info_text),
+        )
+        for key, widget in mapping:
+            widget.configure(state=tk.NORMAL)
+            widget.delete("1.0", tk.END)
+            text = snapshot.get(key, "")
+            if text.endswith("\n"):
+                text = text[:-1]  # Text.get always tacks on a trailing newline
+            widget.insert(tk.END, text)
+            widget.configure(state=tk.DISABLED)
+
     def active_output_widget(self) -> tk.Text:
         widgets: list[tk.Text] = [self.combined_text, self.stdout_text, self.stderr_text, self.info_text]
         active_tab = self.notebook.index(self.notebook.select())  # type: ignore[no-untyped-call]

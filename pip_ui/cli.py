@@ -7,10 +7,12 @@ import importlib.util
 import sys
 
 from pip_ui.__about__ import __version__
+from pip_ui.encoding import configure_utf8_stdio
 
 
 def main() -> None:
     """Parse CLI arguments and launch the GUI or diagnostics mode."""
+    configure_utf8_stdio()
     parser = argparse.ArgumentParser(
         prog="pip-ui",
         description="A Tkinter GUI for pip. Runs commands via: python -m pip",
@@ -77,6 +79,7 @@ def main() -> None:
 
     if args.working_directory:
         app.workdir_var.set(args.working_directory)
+        app.status_workdir_var.set(args.working_directory)
 
     app.mainloop()
 

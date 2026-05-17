@@ -60,7 +60,7 @@ class CommandTree(ttk.Frame):
             ]
             if not matching:
                 continue
-            group_id = self.tree.insert("", tk.END, text=group, open=bool(ft))
+            group_id = self.tree.insert("", tk.END, text=group, open=True)
             self.group_ids[group] = group_id
             for spec in matching:
                 item_id = self.tree.insert(group_id, tk.END, text=spec.label)
