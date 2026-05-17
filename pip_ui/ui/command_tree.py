@@ -8,6 +8,7 @@ from tkinter import ttk
 from typing import Any
 
 from pip_ui.command_specs import COMMAND_GROUPS, get_commands_by_group
+from pip_ui.models import CommandSpec
 
 
 class CommandTree(ttk.Frame):
@@ -16,6 +17,9 @@ class CommandTree(ttk.Frame):
         self.on_select = on_select
         self.group_ids: dict[str, str] = {}
         self.item_to_command: dict[str, str] = {}
+        # Active specs/groups — defaults to pip, replaced on tool switch.
+        self._active_specs: dict[str, CommandSpec] | None = None
+        self._active_groups: list[str] | None = None
         self.build_ui()
 
     def build_ui(self) -> None:
@@ -42,17 +46,35 @@ class CommandTree(ttk.Frame):
 
         self.populate_tree()
 
+    def load_plugin(self, command_specs: dict[str, CommandSpec], command_groups: list[str]) -> None:
+        """Replace the tree contents with the given tool's commands."""
+        self._active_specs = command_specs
+        self._active_groups = command_groups
+        self.search_var.set("")
+        self.populate_tree()
+
     def populate_tree(self, filter_text: str = "") -> None:
         for item in self.tree.get_children():
             self.tree.delete(item)
         self.group_ids = {}
         self.item_to_command = {}
 
-        commands_by_group = get_commands_by_group()
+        if self._active_specs is not None and self._active_groups is not None:
+            specs_by_group: dict[str, list[CommandSpec]] = {g: [] for g in self._active_groups}
+            for spec in self._active_specs.values():
+                if spec.group in specs_by_group:
+                    specs_by_group[spec.group].append(spec)
+                else:
+                    specs_by_group[spec.group] = [spec]
+            groups = self._active_groups
+        else:
+            specs_by_group = get_commands_by_group()
+            groups = COMMAND_GROUPS
+
         ft = filter_text.lower().strip()
 
-        for group in COMMAND_GROUPS:
-            specs = commands_by_group.get(group, [])
+        for group in groups:
+            specs = specs_by_group.get(group, [])
             matching = [
                 s
                 for s in specs

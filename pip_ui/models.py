@@ -18,6 +18,9 @@ class SafetyLevel(enum.Enum):
 class ArgSpec:
     name: str
     flag: str
+    # Supported field_type values:
+    #   "checkbox", "dropdown", "file", "dir", "multi", "text", "secret"
+    # "secret" renders as a password entry; value is redacted in UI/history.
     field_type: str
     label: str
     help: str

@@ -8,9 +8,30 @@ from typing import Any
 from pip_ui.command_specs import COMMAND_SPECS, SPECIAL_ARGV
 from pip_ui.models import ArgSpec, CommandSpec
 
+# Tool name prefixes stripped when building the argv subcommand token.
+# e.g. "twine_upload" -> "upload", "hatch_build" -> "build"
+_TOOL_PREFIXES = ("twine_", "hatch_", "flit_", "pipx_", "venv_", "audit_")
+
+
+def _subcommand_for(spec_name: str) -> str:
+    """Return a space-joined subcommand string for a spec name.
+
+    Strips known tool prefixes, then converts remaining underscores to spaces
+    so that multi-word subcommands split into separate argv tokens.
+    e.g. hatch_env_show -> "env show"  (caller splits on spaces)
+         twine_upload   -> "upload"
+         pipx_list      -> "list"
+    """
+    name = spec_name
+    for prefix in _TOOL_PREFIXES:
+        if name.startswith(prefix):
+            name = name[len(prefix) :]
+            break
+    return name.replace("_", " ")
+
 
 def build_argv_for_spec(spec: CommandSpec, values: dict[str, Any]) -> list[str]:
-    """Build the pip argv portion (everything after `-m pip`) from form values."""
+    """Build the tool argv portion (everything after the executable prefix) from form values."""
     if spec.name in SPECIAL_ARGV:
         return list(SPECIAL_ARGV[spec.name])
 
@@ -57,7 +78,11 @@ def build_argv_for_spec(spec: CommandSpec, values: dict[str, Any]) -> list[str]:
         index_argv += render_general_args(spec, values, skip={"package"})
         return index_argv
 
-    argv = [spec.name]
+    # Generic path: derive subcommand token(s) from the spec name.
+    # Multi-word subcommands (e.g. hatch_env_show -> "env show") become
+    # separate tokens when split on spaces.
+    subcmd = _subcommand_for(spec.name)
+    argv = subcmd.split()
     argv += render_general_args(spec, values)
     return argv
 

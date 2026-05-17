@@ -59,6 +59,10 @@ class FieldWidget:
         elif arg.field_type == "multi":
             self.var = tk.StringVar(value=str(arg.default) if arg.default is not None else "")
             self.widget = ttk.Entry(parent, textvariable=self.var)
+        elif arg.field_type == "secret":
+            self.var = tk.StringVar(value="")
+            self._secret_entry = ttk.Entry(parent, textvariable=self.var, show="*")
+            self.widget = self._secret_entry
         else:
             self.var = tk.StringVar(value=str(arg.default) if arg.default is not None else "")
             self.widget = ttk.Entry(parent, textvariable=self.var)
@@ -97,6 +101,11 @@ class FieldWidget:
             cast(tk.StringVar, self.var).set(default)
         else:
             cast(tk.StringVar, self.var).set(str(self.arg.default) if self.arg.default is not None else "")
+
+    def set_show_secret(self, reveal: bool) -> None:
+        """Toggle visibility for secret fields. No-op for other field types."""
+        if self.arg.field_type == "secret":
+            cast(ttk.Entry, self.widget).config(show="" if reveal else "*")
 
     def trace(self, callback: Callable[[], None]) -> None:
         self.var.trace_add("write", lambda *a: callback())
@@ -355,6 +364,11 @@ class CommandForm(ttk.Frame):
         self.clipboard_clear()
         self.clipboard_append(code)
         info_dialog(self, "Copied", "Python subprocess code copied to clipboard.")
+
+    def apply_show_secrets(self, reveal: bool) -> None:
+        """Reveal or hide all secret fields in the current form."""
+        for fw in self.field_widgets:
+            fw.set_show_secret(reveal)
 
     def apply_global_requirements(self, path: str | None) -> None:
         """Push the toolbar-selected requirements file onto the current form's field."""

@@ -13,7 +13,6 @@ from tkinter import filedialog, ttk
 from typing import Any
 
 from pip_ui.__about__ import __version__
-from pip_ui.command_specs import COMMAND_SPECS
 from pip_ui.history import CommandHistory
 from pip_ui.models import HistoryEntry, InterpreterInfo
 from pip_ui.runner import PipRunner
@@ -27,6 +26,8 @@ from pip_ui.safety import (
 )
 from pip_ui.self_update import UpgradeInfo, check_latest_version
 from pip_ui.settings import AppSettings
+from pip_ui.tool_detector import detect_all_tools
+from pip_ui.tools import ToolPlugin, get_plugin
 from pip_ui.ui.cert_tester import CertTesterDialog
 from pip_ui.ui.command_form import CommandForm, default_global_values
 from pip_ui.ui.command_tree import CommandTree
@@ -39,6 +40,7 @@ from pip_ui.ui.interpreter_picker import InterpreterPicker
 from pip_ui.ui.output_panel import OutputPanel
 from pip_ui.ui.proxy_dialog import ProxyDialog
 from pip_ui.ui.requirements_picker import RequirementsPicker
+from pip_ui.ui.tool_switcher import ToolSwitcher
 
 
 class MainWindow(tk.Tk):
@@ -48,6 +50,7 @@ class MainWindow(tk.Tk):
         self.safe_mode = safe_mode
         self.settings = AppSettings()
         self.settings.load()
+        self.active_plugin: ToolPlugin = get_plugin("pip")  # type: ignore[assignment]
         self.history = CommandHistory() if not no_history else None
         self.runner = PipRunner()
         self.output_queue: queue.Queue[tuple[str, str]] = queue.Queue()
@@ -77,6 +80,7 @@ class MainWindow(tk.Tk):
         # Commands we'll auto-run on first selection because they're read-only
         # and need no required args. Anything else stays blank until Run.
         self.autorun_on_select: set[str] = {
+            # pip
             "list",
             "freeze",
             "check",
@@ -88,6 +92,14 @@ class MainWindow(tk.Tk):
             "cache_list",
             "debug",
             "version",
+            # other tools
+            "venv_version",
+            "twine_version",
+            "audit_version",
+            "hatch_env_show",
+            "hatch_version_show",
+            "pipx_list",
+            "pipx_environment",
         }
 
         # Globals are now stored centrally, not on each per-command form.
@@ -111,7 +123,9 @@ class MainWindow(tk.Tk):
         self.maximize_on_startup()
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
+        ToolSwitcher.configure_styles(self)
         self.build_menu()
+        self.build_tool_switcher()
         self.build_toolbar()
         self.build_upgrade_banner()
         self.build_main_panels()
@@ -124,6 +138,63 @@ class MainWindow(tk.Tk):
         self.after(50, self.poll_queues)
         # Kick off the PyPI version check; the result lands on upgrade_queue.
         check_latest_version(__version__, self.upgrade_queue.put)
+        # Kick off background tool detection; results update the tab row.
+        self._start_tool_detection()
+        # Restore the previously active tool (after detection so availability is set).
+        saved_tool = self.settings.get("active_tool", "pip")
+        if saved_tool and saved_tool != "pip":
+            self.after(300, lambda: self.tool_switcher.select(str(saved_tool)))
+
+    # -------------------------------------------------------- tool switcher
+
+    def build_tool_switcher(self) -> None:
+        self.tool_switcher = ToolSwitcher(self, on_switch=self.on_tool_switch)
+        self.tool_switcher.pack(side=tk.TOP, fill=tk.X, padx=2, pady=(2, 0))
+
+    def on_tool_switch(self, plugin: ToolPlugin) -> None:
+        self.active_plugin = plugin
+        self.settings.set("active_tool", plugin.name)
+
+        # Rebuild the command tree for this tool.
+        self.command_tree.load_plugin(plugin.command_specs, plugin.command_groups)
+
+        # Clear the form (no command selected yet in the new tree).
+        if self.command_form is not None:
+            for _child in self.command_form.winfo_children():
+                pass  # form rebuilds on next set_command call
+            self.command_form.spec = None
+            self.command_form.title_label.config(text="Select a command")
+            self.command_form.desc_label.config(text="")
+            self.command_form.run_btn.config(state=tk.DISABLED)
+            self.command_form.dry_run_btn.config(state=tk.DISABLED)
+            self.command_form.update_preview()
+
+        # Show/hide interpreter row based on the tool.
+        if plugin.hide_interpreter_picker:
+            self.interpreter_row.pack_forget()
+        else:
+            self.interpreter_row.pack(side=tk.TOP, fill=tk.X, padx=2, pady=(0, 2), before=self.toolbar2)
+
+        # Rename Dir label for project-scoped tools.
+        label_text = "Project Dir:" if plugin.is_project_scoped else "Dir:"
+        self.dir_label.config(text=label_text)
+
+        # Update title bar.
+        self.title(f"pip-ui v{__version__} — {plugin.label}")
+
+        # Update Help menu doc link.
+        self._active_help_url = plugin.help_url
+        self._update_help_menu()
+
+        # Clear output cache (different tool = different outputs).
+        self.output_cache.clear()
+        self.output_panel.clear()
+
+    def _start_tool_detection(self) -> None:
+        def on_result(name: str, available: bool) -> None:
+            self.after(0, lambda: self.tool_switcher.set_available(name, available))
+
+        detect_all_tools(self.current_interpreter, on_result=on_result)
 
     # ------------------------------------------------------------------ menu
 
@@ -160,30 +231,34 @@ class MainWindow(tk.Tk):
         tools_menu.add_command(label="Check for Updates", command=self.manual_check_updates)
         tools_menu.add_command(label="Upgrade pip-ui", command=self.self_upgrade)
 
-        help_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Help", menu=help_menu)
-        help_menu.add_command(label="pip Documentation", command=self.open_pip_documentation)
-        help_menu.add_command(label="pip Release Notes", command=self.open_pip_release_notes)
-        help_menu.add_separator()
-        help_menu.add_command(label="About", command=self.show_about)
+        self.help_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Help", menu=self.help_menu)
+        self.help_menu.add_command(label="Documentation", command=self.open_tool_documentation)
+        self.help_menu.add_command(label="pip Release Notes", command=self.open_pip_release_notes)
+        self.help_menu.add_separator()
+        self.help_menu.add_command(label="About", command=self.show_about)
 
     # --------------------------------------------------------------- toolbar
 
     def build_toolbar(self) -> None:
-        toolbar = ttk.Frame(self, relief=tk.GROOVE, borderwidth=1)
-        toolbar.pack(side=tk.TOP, fill=tk.X, padx=2, pady=2)
+        self._active_help_url = "https://pip.pypa.io/en/stable/"
 
-        self.interpreter_picker = InterpreterPicker(toolbar, on_change=self.on_interpreter_change)
+        self.interpreter_row = ttk.Frame(self, relief=tk.GROOVE, borderwidth=1)
+        self.interpreter_row.pack(side=tk.TOP, fill=tk.X, padx=2, pady=2)
+
+        self.interpreter_picker = InterpreterPicker(self.interpreter_row, on_change=self.on_interpreter_change)
         self.interpreter_picker.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=4)
 
-        ttk.Label(toolbar, text="Dir:").pack(side=tk.LEFT, padx=(8, 2))
+        self.dir_label = ttk.Label(self.interpreter_row, text="Dir:")
+        self.dir_label.pack(side=tk.LEFT, padx=(8, 2))
         self.workdir_var = tk.StringVar(value=self.settings.get("last_working_dir") or os.getcwd())
-        workdir_entry = ttk.Entry(toolbar, textvariable=self.workdir_var, width=30)
+        workdir_entry = ttk.Entry(self.interpreter_row, textvariable=self.workdir_var, width=30)
         workdir_entry.pack(side=tk.LEFT, padx=2)
-        ttk.Button(toolbar, text="Browse...", command=self.browse_workdir).pack(side=tk.LEFT, padx=2)
+        ttk.Button(self.interpreter_row, text="Browse...", command=self.browse_workdir).pack(side=tk.LEFT, padx=2)
 
         # Second row: requirements picker + index selector + Global Options button.
-        toolbar2 = ttk.Frame(self, relief=tk.GROOVE, borderwidth=1)
+        self.toolbar2 = ttk.Frame(self, relief=tk.GROOVE, borderwidth=1)
+        toolbar2 = self.toolbar2
         toolbar2.pack(side=tk.TOP, fill=tk.X, padx=2, pady=(0, 2))
 
         self.requirements_picker = RequirementsPicker(toolbar2, on_change=self.on_requirements_change)
@@ -304,7 +379,10 @@ class MainWindow(tk.Tk):
     # ------------------------------------------------------------ callbacks
 
     def on_show_secrets_toggle(self) -> None:
-        self.settings.set("show_secrets", bool(self.show_secrets.get()))
+        reveal = bool(self.show_secrets.get())
+        self.settings.set("show_secrets", reveal)
+        if self.command_form is not None:
+            self.command_form.apply_show_secrets(reveal)
 
     def on_interpreter_change(self, info: InterpreterInfo | None) -> None:
         prior = self.current_interpreter
@@ -321,6 +399,7 @@ class MainWindow(tk.Tk):
             # it in the tree.
             if prior is not None and prior.path != info.path:
                 self.output_cache.clear()
+                self._start_tool_detection()
             # If a command is already selected, refresh it.
             if self.command_form is not None and self.command_form.spec is not None:
                 self.after(0, self.refresh_current_command_output)
@@ -344,7 +423,7 @@ class MainWindow(tk.Tk):
             self.requirements_picker.set_directory(path)
 
     def on_command_select(self, command_name: str) -> None:
-        spec = COMMAND_SPECS.get(command_name)
+        spec = self.active_plugin.command_specs.get(command_name)
         if spec is None:
             return
         self.stderr_buffer = []
@@ -464,13 +543,13 @@ class MainWindow(tk.Tk):
             and command_name in {"install", "download", "wheel", "index_versions"}
         ):
             effective_pip_args.extend(["--index-url", self.active_index_url])
-        full_argv = self.runner.build_argv(self.current_interpreter.path, effective_pip_args)
+        full_argv = self.runner.build_argv(self.current_interpreter.path, effective_pip_args, plugin=self.active_plugin)
 
         self.output_panel.clear()
         self.stderr_buffer = []
         self.last_run_argv = list(pip_args)
 
-        redacted_argv = PipRunner.redact_argv(full_argv)
+        redacted_argv = PipRunner.redact_argv(full_argv, secret_flags=self.active_plugin.secret_flags)
         display_argv = full_argv if self.show_secrets.get() else redacted_argv
 
         self.output_panel.set_command_info(
@@ -752,6 +831,18 @@ class MainWindow(tk.Tk):
             webbrowser.open(url, new=2)
         except webbrowser.Error as exc:
             error_dialog(self, "Open Link Failed", f"Could not open link:\n{url}\n\n{exc}")
+
+    def open_tool_documentation(self) -> None:
+        self.open_url(self._active_help_url)
+
+    def _update_help_menu(self) -> None:
+        label = f"{self.active_plugin.label} Documentation"
+        self.help_menu.entryconfig(0, label=label)
+        # Show/hide pip Release Notes depending on active tool.
+        if self.active_plugin.name == "pip":
+            self.help_menu.entryconfig(1, state=tk.NORMAL)
+        else:
+            self.help_menu.entryconfig(1, state=tk.DISABLED)
 
     def open_pip_documentation(self) -> None:
         self.open_url("https://pip.pypa.io/en/stable/")

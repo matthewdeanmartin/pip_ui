@@ -21,6 +21,24 @@ classifiers = [
 ]
 dependencies = []
 
+[project.optional-dependencies]
+build      = ["build>=1.0"]
+virtualenv = ["virtualenv>=20.0"]
+twine      = ["twine>=5.0"]
+pip-audit  = ["pip-audit>=2.7"]
+hatch      = ["hatch>=1.9"]
+flit       = ["flit>=3.9"]
+pipx       = ["pipx>=1.4"]
+all-tools  = [
+    "build>=1.0",
+    "virtualenv>=20.0",
+    "twine>=5.0",
+    "pip-audit>=2.7",
+    "hatch>=1.9",
+    "flit>=3.9",
+    "pipx>=1.4",
+]
+
 [project.urls]
 Repository = "https://github.com/matthewdeanmartin/pip_ui"
 Documentation = "https://pip-ui.readthedocs.io/en/latest/"
