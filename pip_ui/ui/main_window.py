@@ -4,18 +4,24 @@ from __future__ import annotations
 
 import os
 import queue
-import sys
 import tkinter as tk
 from datetime import datetime
 from tkinter import ttk
-from typing import Any, Optional
+from typing import Optional
 
 from pip_ui.__about__ import __version__
 from pip_ui.command_specs import COMMAND_SPECS
 from pip_ui.history import CommandHistory
-from pip_ui.models import HistoryEntry, InterpreterInfo, RunResult
+from pip_ui.models import HistoryEntry, InterpreterInfo
 from pip_ui.runner import PipRunner
-from pip_ui.safety import check_global_install, classify_command, needs_confirmation
+from pip_ui.safety import (
+    check_global_install,
+    classify_command,
+    collect_argv_warnings,
+    confirmation_message,
+    explain_pip_error,
+    needs_confirmation,
+)
 from pip_ui.settings import AppSettings
 from pip_ui.ui.command_form import CommandForm
 from pip_ui.ui.command_tree import CommandTree
@@ -38,6 +44,11 @@ class MainWindow(tk.Tk):
         self.done_queue: queue.Queue[int] = queue.Queue()
         self.current_interpreter: Optional[InterpreterInfo] = None
         self.run_start_time: Optional[datetime] = None
+        self.last_run_argv: list[str] = []
+        self.last_run_exit: Optional[int] = None
+        self.stderr_buffer: list[str] = []
+
+        self.show_secrets = tk.BooleanVar(value=bool(self.settings.get("show_secrets", False)))
 
         self.title("pip-ui - Python Package Installer GUI")
         width = self.settings.get("window_width", 1100)
@@ -63,10 +74,16 @@ class MainWindow(tk.Tk):
         edit_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Edit", menu=edit_menu)
         edit_menu.add_command(label="Copy", accelerator="Ctrl+C", command=self.copy_selection)
+        edit_menu.add_command(label="Copy Command", accelerator="Ctrl+Shift+C", command=self.copy_command)
 
         view_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="View", menu=view_menu)
         view_menu.add_command(label="Config Dashboard", command=self.show_config_view)
+        view_menu.add_checkbutton(
+            label="Show Sensitive Values",
+            variable=self.show_secrets,
+            command=self.on_show_secrets_toggle,
+        )
 
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Help", menu=help_menu)
@@ -95,10 +112,12 @@ class MainWindow(tk.Tk):
         middle_paned = ttk.PanedWindow(self.horizontal_paned, orient=tk.VERTICAL)
         self.horizontal_paned.add(middle_paned, weight=2)
 
-        self.command_form = CommandForm(middle_paned, on_run=self.run_command)
+        self.command_form = CommandForm(
+            middle_paned, on_run=self.run_command, on_form_change=self.on_form_change
+        )
         middle_paned.add(self.command_form, weight=1)
 
-        self.output_panel = OutputPanel(middle_paned)
+        self.output_panel = OutputPanel(middle_paned, on_cancel=self.on_cancel_running)
         middle_paned.add(self.output_panel, weight=1)
 
         self.help_panel = HelpPanel(self.horizontal_paned)
@@ -120,15 +139,25 @@ class MainWindow(tk.Tk):
         self.bind("<Control-r>", lambda e: self.command_form.do_run())
         self.bind("<Control-l>", lambda e: self.command_tree.focus_search())
         self.bind("<Control-q>", lambda e: self.on_close())
+        self.bind("<Control-Shift-C>", lambda e: self.copy_command())
+
+    def on_show_secrets_toggle(self) -> None:
+        self.settings.set("show_secrets", bool(self.show_secrets.get()))
 
     def on_interpreter_change(self, info: Optional[InterpreterInfo]) -> None:
         self.current_interpreter = info
         if info:
             self.status_interpreter_var.set(f"{info.path} ({info.version}, pip {info.pip_version})")
             self.settings.set("last_interpreter", info.path)
+            # Re-render help/right panel with the new interpreter.
+            if self.command_form.spec is not None:
+                self.help_panel.update_for_command(
+                    self.command_form.spec, self.command_form.get_argv(), info
+                )
 
     def browse_workdir(self) -> None:
         from tkinter import filedialog
+
         path = filedialog.askdirectory(title="Select Working Directory")
         if path:
             self.workdir_var.set(path)
@@ -140,15 +169,32 @@ class MainWindow(tk.Tk):
         if spec is None:
             return
         self.command_form.set_command(spec)
-        self.help_panel.update_for_command(spec, [], self.current_interpreter)
+        self.help_panel.update_for_command(
+            spec, self.command_form.get_argv(), self.current_interpreter
+        )
+
+    def on_form_change(self) -> None:
+        if self.command_form.spec is None:
+            return
+        self.help_panel.update_for_command(
+            self.command_form.spec, self.command_form.get_argv(), self.current_interpreter
+        )
 
     def run_command(self, pip_args: list[str], label: str) -> None:
         if self.current_interpreter is None:
             error_dialog(self, "No Interpreter", "Please select a Python interpreter first.")
             return
+        if self.runner.is_running():
+            error_dialog(self, "Already Running", "A pip command is already in progress. Cancel it first.")
+            return
 
-        command_name = pip_args[0] if pip_args else ""
+        command_name = self.command_form.spec.name if self.command_form.spec else ""
         safety_level = classify_command(command_name)
+
+        # Safety / advisory warnings derived from the argv.
+        warnings = collect_argv_warnings(pip_args)
+        for w in warnings:
+            self.output_panel.append_combined(f"[warning] {w}\n", tag="warning")
 
         if self.safe_mode and needs_confirmation(safety_level):
             confirmed = confirm_dialog(
@@ -159,12 +205,11 @@ class MainWindow(tk.Tk):
             if not confirmed:
                 return
         elif needs_confirmation(safety_level):
-            from pip_ui.safety import confirmation_message
             confirmed = confirm_dialog(self, "Confirm Action", confirmation_message(command_name))
             if not confirmed:
                 return
 
-        if command_name == "install" and self.current_interpreter is not None:
+        if command_name in {"install", "download", "wheel"} and self.current_interpreter is not None:
             warning = check_global_install(self.current_interpreter)
             if warning:
                 confirmed = confirm_dialog(self, "Global Install Warning", warning + "\n\nContinue?")
@@ -175,16 +220,23 @@ class MainWindow(tk.Tk):
         cwd = self.workdir_var.get() or os.getcwd()
 
         self.output_panel.clear()
+        self.stderr_buffer = []
+        self.last_run_argv = list(pip_args)
+
+        redacted_argv = PipRunner.redact_argv(full_argv)
+        display_argv = full_argv if self.show_secrets.get() else redacted_argv
+
         self.output_panel.set_command_info({
             "Command": label,
             "Interpreter": self.current_interpreter.path,
+            "Python Version": self.current_interpreter.version,
+            "Pip Version": self.current_interpreter.pip_version,
             "Working Directory": cwd,
-            "Arguments": str(pip_args),
+            "Argv": str(display_argv),
+            "Started": datetime.now().isoformat(timespec="seconds"),
         })
 
         self.run_start_time = datetime.now()
-
-        redacted_argv = PipRunner.redact_argv(full_argv)
 
         def enqueue_stdout(line: str) -> None:
             self.output_queue.put(("stdout", line))
@@ -195,11 +247,30 @@ class MainWindow(tk.Tk):
         def on_done(exit_code: int) -> None:
             self.done_queue.put(exit_code)
 
+        self.output_panel.set_running(True)
         self.runner.run(full_argv, cwd, enqueue_stdout, enqueue_stderr, on_done)
 
         self.run_pip_args = pip_args
         self.run_label = label
         self.run_redacted_argv = redacted_argv
+        self.run_full_argv = full_argv
+
+    def on_cancel_running(self, force: bool) -> None:
+        if not self.runner.is_running():
+            return
+        if force:
+            confirmed = confirm_dialog(
+                self,
+                "Force Kill",
+                "Graceful cancel did not stop the process. Force kill? This may leave files in a partial state.",
+            )
+            if not confirmed:
+                return
+            self.runner.cancel(force=True)
+            self.output_panel.append_combined("\n[Force killed by user]\n", tag="warning")
+        else:
+            self.runner.cancel(force=False)
+            self.output_panel.append_combined("\n[Cancel requested by user]\n", tag="warning")
 
     def poll_queues(self) -> None:
         try:
@@ -209,6 +280,7 @@ class MainWindow(tk.Tk):
                     self.output_panel.append_stdout(line)
                 else:
                     self.output_panel.append_stderr(line)
+                    self.stderr_buffer.append(line)
         except queue.Empty:
             pass
 
@@ -224,16 +296,34 @@ class MainWindow(tk.Tk):
         end_time = datetime.now()
         start_time = self.run_start_time or end_time
         duration = (end_time - start_time).total_seconds()
+        self.last_run_exit = exit_code
 
         if exit_code == 0:
             self.output_panel.append_stdout(f"\n[Completed successfully in {duration:.2f}s]\n")
+        elif exit_code == -1:
+            self.output_panel.append_stderr(f"\n[Cancelled by user after {duration:.2f}s]\n")
+        elif exit_code == -9:
+            self.output_panel.append_stderr(f"\n[Force killed after {duration:.2f}s]\n")
         else:
             self.output_panel.append_stderr(f"\n[Exited with code {exit_code} in {duration:.2f}s]\n")
+
+        # Append error hints for known patterns.
+        stderr_blob = "".join(self.stderr_buffer)
+        for hint in explain_pip_error(stderr_blob):
+            self.output_panel.append_combined(f"[hint] {hint}\n", tag="hint")
+
+        # Update command-info tab with final metadata.
+        self.output_panel.append_command_info({
+            "Exit Code": exit_code,
+            "Ended": end_time.isoformat(timespec="seconds"),
+            "Duration (s)": f"{duration:.3f}",
+        })
+
+        self.output_panel.set_running(False)
 
         if self.history is not None and self.current_interpreter is not None:
             redacted = getattr(self, "run_redacted_argv", [])
             label = getattr(self, "run_label", "")
-            from pip_ui.runner import PipRunner
             runner = PipRunner()
             entry = HistoryEntry(
                 timestamp=start_time,
@@ -249,7 +339,8 @@ class MainWindow(tk.Tk):
 
     def show_config_view(self) -> None:
         from pip_ui.ui.config_view import ConfigView
-        ConfigView(self, interpreter_info=self.current_interpreter)
+
+        ConfigView(self, interpreter_info=self.current_interpreter, show_secrets=bool(self.show_secrets.get()))
 
     def show_about(self) -> None:
         info_dialog(
@@ -267,6 +358,11 @@ class MainWindow(tk.Tk):
                 self.clipboard_append(text)
         except Exception:
             pass
+
+    def copy_command(self) -> None:
+        if self.command_form.spec is None:
+            return
+        self.command_form.copy_command()
 
     def on_close(self) -> None:
         self.settings.set("window_width", self.winfo_width())

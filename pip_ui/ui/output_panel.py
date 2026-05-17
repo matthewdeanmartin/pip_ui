@@ -2,17 +2,23 @@
 
 from __future__ import annotations
 
-import json
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 MONO_FONT = ("Consolas", 10)
 
 
 class OutputPanel(ttk.Frame):
-    def __init__(self, parent: tk.Widget, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        parent: tk.Widget,
+        on_cancel: Optional[Callable[[bool], None]] = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(parent, **kwargs)
+        self.on_cancel = on_cancel
+        self.running = False
         self.build_ui()
 
     def build_ui(self) -> None:
@@ -22,6 +28,11 @@ class OutputPanel(ttk.Frame):
         ttk.Button(toolbar, text="Copy All", command=self.copy_all).pack(side=tk.LEFT, padx=2)
         ttk.Button(toolbar, text="Save...", command=self.save_output).pack(side=tk.LEFT, padx=2)
         ttk.Button(toolbar, text="Clear", command=self.clear).pack(side=tk.LEFT, padx=2)
+
+        self.cancel_btn = ttk.Button(toolbar, text="Cancel", command=self.request_cancel, state=tk.DISABLED)
+        self.cancel_btn.pack(side=tk.LEFT, padx=2)
+        self.kill_btn = ttk.Button(toolbar, text="Force Kill", command=self.request_kill, state=tk.DISABLED)
+        self.kill_btn.pack(side=tk.LEFT, padx=2)
 
         ttk.Label(toolbar, text="Search:").pack(side=tk.LEFT, padx=(8, 2))
         self.search_var = tk.StringVar()
@@ -38,9 +49,10 @@ class OutputPanel(ttk.Frame):
         self.stderr_text = self.make_text_tab("stderr")
         self.info_text = self.make_text_tab("Command Info")
 
-        self.stderr_text.tag_configure("stderr", foreground="red")
-
-        self.bind_all("<Control-f>", lambda e: self.focus_search())
+        for widget in (self.combined_text, self.stderr_text):
+            widget.tag_configure("stderr", foreground="red")
+            widget.tag_configure("warning", foreground="#b06000")
+            widget.tag_configure("hint", foreground="#0a5a0a")
 
     def make_text_tab(self, label: str) -> tk.Text:
         frame = ttk.Frame(self.notebook)
@@ -73,7 +85,10 @@ class OutputPanel(ttk.Frame):
 
     def append_stderr(self, text: str) -> None:
         self.append_to(self.stderr_text, text, "stderr")
-        self.append_to(self.combined_text, text)
+        self.append_to(self.combined_text, text, "stderr")
+
+    def append_combined(self, text: str, tag: Optional[str] = None) -> None:
+        self.append_to(self.combined_text, text, tag)
 
     def set_command_info(self, info_dict: dict[str, Any]) -> None:
         self.info_text.configure(state=tk.NORMAL)
@@ -81,6 +96,29 @@ class OutputPanel(ttk.Frame):
         for key, value in info_dict.items():
             self.info_text.insert(tk.END, f"{key}: {value}\n")
         self.info_text.configure(state=tk.DISABLED)
+
+    def append_command_info(self, info_dict: dict[str, Any]) -> None:
+        self.info_text.configure(state=tk.NORMAL)
+        for key, value in info_dict.items():
+            self.info_text.insert(tk.END, f"{key}: {value}\n")
+        self.info_text.configure(state=tk.DISABLED)
+
+    def set_running(self, running: bool) -> None:
+        self.running = running
+        if running:
+            self.cancel_btn.config(state=tk.NORMAL)
+            self.kill_btn.config(state=tk.NORMAL)
+        else:
+            self.cancel_btn.config(state=tk.DISABLED)
+            self.kill_btn.config(state=tk.DISABLED)
+
+    def request_cancel(self) -> None:
+        if self.on_cancel is not None:
+            self.on_cancel(False)
+
+    def request_kill(self) -> None:
+        if self.on_cancel is not None:
+            self.on_cancel(True)
 
     def clear(self) -> None:
         for widget in (self.combined_text, self.stdout_text, self.stderr_text, self.info_text):
@@ -98,6 +136,7 @@ class OutputPanel(ttk.Frame):
 
     def save_output(self) -> None:
         from pip_ui.ui.dialogs import save_file_dialog
+
         path = save_file_dialog(
             self,
             title="Save Output",
@@ -111,9 +150,6 @@ class OutputPanel(ttk.Frame):
             content = widget.get("1.0", tk.END)
             with open(path, "w", encoding="utf-8") as fh:
                 fh.write(content)
-
-    def focus_search(self) -> None:
-        pass
 
     def search_output(self) -> None:
         term = self.search_var.get()

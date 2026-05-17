@@ -4,10 +4,17 @@ from __future__ import annotations
 
 import json
 import tkinter as tk
-from tkinter import filedialog, ttk
+from tkinter import filedialog, simpledialog, ttk
 from typing import Any, Callable, Optional
 
+from pip_ui.forms import (
+    GLOBAL_OPTIONS,
+    build_argv_for_spec,
+    parse_raw_extra,
+    render_global_args,
+)
 from pip_ui.models import ArgSpec, CommandSpec
+from pip_ui.presets import PresetStore
 
 MONO_FONT = ("Consolas", 10)
 
@@ -21,7 +28,8 @@ class FieldWidget:
             self.var = tk.BooleanVar(value=bool(arg.default))
             self.widget = ttk.Checkbutton(parent, variable=self.var)
         elif arg.field_type == "dropdown":
-            self.var = tk.StringVar(value=str(arg.default) if arg.default is not None else (arg.choices[0] if arg.choices else ""))
+            initial = str(arg.default) if arg.default is not None else (arg.choices[0] if arg.choices else "")
+            self.var = tk.StringVar(value=initial)
             self.widget = ttk.Combobox(parent, textvariable=self.var, values=arg.choices, state="readonly")
         elif arg.field_type in ("file", "dir"):
             self.var = tk.StringVar(value=str(arg.default) if arg.default is not None else "")
@@ -56,11 +64,19 @@ class FieldWidget:
         val = self.var.get()
         return val if val else None
 
+    def set_value(self, value: Any) -> None:
+        if self.arg.field_type == "checkbox":
+            self.var.set(bool(value))
+        else:
+            self.var.set("" if value is None else str(value))
+
     def reset(self) -> None:
         if self.arg.field_type == "checkbox":
             self.var.set(bool(self.arg.default))
         elif self.arg.field_type == "dropdown":
-            default = str(self.arg.default) if self.arg.default is not None else (self.arg.choices[0] if self.arg.choices else "")
+            default = str(self.arg.default) if self.arg.default is not None else (
+                self.arg.choices[0] if self.arg.choices else ""
+            )
             self.var.set(default)
         else:
             self.var.set(str(self.arg.default) if self.arg.default is not None else "")
@@ -70,11 +86,21 @@ class FieldWidget:
 
 
 class CommandForm(ttk.Frame):
-    def __init__(self, parent: tk.Widget, on_run: Callable[[list[str], str], None], **kwargs: Any) -> None:
+    def __init__(
+        self,
+        parent: tk.Widget,
+        on_run: Callable[[list[str], str], None],
+        on_form_change: Optional[Callable[[], None]] = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(parent, **kwargs)
         self.on_run = on_run
+        self.on_form_change = on_form_change
         self.spec: Optional[CommandSpec] = None
         self.field_widgets: list[FieldWidget] = []
+        self.global_widgets: list[FieldWidget] = []
+        self.raw_extra_var = tk.StringVar(value="")
+        self.presets = PresetStore()
         self.build_ui()
 
     def build_ui(self) -> None:
@@ -96,12 +122,15 @@ class CommandForm(ttk.Frame):
         self.form_canvas_window = self.form_canvas.create_window((0, 0), window=self.fields_frame, anchor=tk.NW)
         self.fields_frame.bind("<Configure>", self.on_fields_configure)
         self.form_canvas.bind("<Configure>", self.on_canvas_configure)
+        # Mouse wheel scrolling on the canvas
+        self.form_canvas.bind("<Enter>", lambda e: self.form_canvas.bind_all("<MouseWheel>", self.on_mouse_wheel))
+        self.form_canvas.bind("<Leave>", lambda e: self.form_canvas.unbind_all("<MouseWheel>"))
 
         preview_frame = ttk.LabelFrame(self, text="Command Preview")
         preview_frame.pack(fill=tk.X, padx=8, pady=4)
         self.preview_shell = tk.Text(preview_frame, height=2, font=MONO_FONT, wrap=tk.WORD, state=tk.DISABLED)
         self.preview_shell.pack(fill=tk.X, padx=4, pady=2)
-        self.preview_argv = tk.Text(preview_frame, height=2, font=MONO_FONT, wrap=tk.WORD, state=tk.DISABLED)
+        self.preview_argv = tk.Text(preview_frame, height=3, font=MONO_FONT, wrap=tk.WORD, state=tk.DISABLED)
         self.preview_argv.pack(fill=tk.X, padx=4, pady=2)
 
         btn_frame = ttk.Frame(self)
@@ -112,6 +141,8 @@ class CommandForm(ttk.Frame):
         ttk.Button(btn_frame, text="Reset Form", command=self.reset).pack(side=tk.LEFT, padx=2)
         self.dry_run_btn = ttk.Button(btn_frame, text="Dry Run", command=self.do_dry_run, state=tk.DISABLED)
         self.dry_run_btn.pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text="Save Preset...", command=self.save_preset).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text="Load Preset...", command=self.load_preset).pack(side=tk.LEFT, padx=2)
 
     def on_fields_configure(self, event: Any) -> None:
         self.form_canvas.configure(scrollregion=self.form_canvas.bbox("all"))
@@ -119,79 +150,85 @@ class CommandForm(ttk.Frame):
     def on_canvas_configure(self, event: Any) -> None:
         self.form_canvas.itemconfig(self.form_canvas_window, width=event.width)
 
+    def on_mouse_wheel(self, event: Any) -> None:
+        # Windows / macOS use event.delta; X11 sends Button-4/5 instead.
+        delta = -1 if getattr(event, "delta", 0) > 0 else 1
+        self.form_canvas.yview_scroll(delta, "units")
+
+    def add_field(self, parent: tk.Widget, arg: ArgSpec, row: int) -> FieldWidget:
+        ttk.Label(parent, text=arg.label + ("*" if arg.required else "") + ":").grid(
+            row=row, column=0, sticky=tk.W, padx=8, pady=3
+        )
+        fw = FieldWidget(arg, parent)
+        fw.widget.grid(row=row, column=1, sticky=tk.EW, padx=8, pady=3)
+        ttk.Label(parent, text=arg.help, foreground="gray", wraplength=300).grid(
+            row=row, column=2, sticky=tk.W, padx=4, pady=3
+        )
+        fw.trace(self.update_preview)
+        return fw
+
     def set_command(self, spec: CommandSpec) -> None:
         self.spec = spec
         self.title_label.config(text=spec.label)
         self.desc_label.config(text=spec.description)
         self.field_widgets = []
+        self.global_widgets = []
 
         for widget in self.fields_frame.winfo_children():
             widget.destroy()
 
-        for i, arg in enumerate(spec.args):
-            ttk.Label(self.fields_frame, text=arg.label + ("*" if arg.required else "") + ":").grid(
-                row=i, column=0, sticky=tk.W, padx=8, pady=3
-            )
-            fw = FieldWidget(arg, self.fields_frame)
-            fw.widget.grid(row=i, column=1, sticky=tk.EW, padx=8, pady=3)
-            ttk.Label(self.fields_frame, text=arg.help, foreground="gray", wraplength=300).grid(
-                row=i, column=2, sticky=tk.W, padx=4, pady=3
-            )
-            fw.trace(self.update_preview)
+        row = 0
+        for arg in spec.args:
+            fw = self.add_field(self.fields_frame, arg, row)
             self.field_widgets.append(fw)
+            row += 1
+
+        # Raw extra arguments (always available).
+        ttk.Separator(self.fields_frame, orient=tk.HORIZONTAL).grid(
+            row=row, column=0, columnspan=3, sticky=tk.EW, padx=4, pady=6
+        )
+        row += 1
+        ttk.Label(self.fields_frame, text="Extra Args:").grid(row=row, column=0, sticky=tk.W, padx=8, pady=3)
+        raw_entry = ttk.Entry(self.fields_frame, textvariable=self.raw_extra_var)
+        raw_entry.grid(row=row, column=1, sticky=tk.EW, padx=8, pady=3)
+        ttk.Label(
+            self.fields_frame,
+            text="Free-form arguments appended verbatim (shell-tokenized).",
+            foreground="gray",
+            wraplength=300,
+        ).grid(row=row, column=2, sticky=tk.W, padx=4, pady=3)
+        self.raw_extra_var.trace_add("write", lambda *a: self.update_preview())
+        row += 1
+
+        # Global / Advanced options block.
+        adv = ttk.LabelFrame(self.fields_frame, text="Global / Advanced Options (apply to most pip commands)")
+        adv.grid(row=row, column=0, columnspan=3, sticky=tk.EW, padx=4, pady=6)
+        adv.columnconfigure(1, weight=1)
+        for i, garg in enumerate(GLOBAL_OPTIONS):
+            fw = self.add_field(adv, garg, i)
+            self.global_widgets.append(fw)
+        row += 1
 
         self.fields_frame.columnconfigure(1, weight=1)
 
         self.run_btn.config(state=tk.NORMAL)
         self.dry_run_btn.config(state=tk.NORMAL if spec.supports_dry_run else tk.DISABLED)
+        self.raw_extra_var.set("")
         self.update_preview()
+
+    def collect_values(self) -> dict[str, Any]:
+        return {fw.arg.name: fw.get_value() for fw in self.field_widgets}
+
+    def collect_global_values(self) -> dict[str, Any]:
+        return {fw.arg.name: fw.get_value() for fw in self.global_widgets}
 
     def get_argv(self) -> list[str]:
         if self.spec is None:
             return []
-        args: list[str] = []
-
-        if self.spec.name == "config_list":
-            return ["config", "list"]
-        if self.spec.name == "config_debug":
-            return ["config", "debug"]
-        if self.spec.name == "cache_dir":
-            return ["cache", "dir"]
-        if self.spec.name == "cache_info":
-            return ["cache", "info"]
-        if self.spec.name == "debug":
-            return ["debug"]
-        if self.spec.name == "version":
-            return ["--version"]
-        if self.spec.name == "help":
-            return ["help"]
-
-        args.append(self.spec.name)
-
-        for fw in self.field_widgets:
-            arg = fw.arg
-            value = fw.get_value()
-            if arg.field_type == "checkbox":
-                if value:
-                    args.append(arg.flag)
-            elif arg.field_type == "multi":
-                if value:
-                    tokens = str(value).split()
-                    for token in tokens:
-                        if arg.flag:
-                            args.append(arg.flag)
-                        args.append(token)
-            elif arg.field_type == "dropdown":
-                if value and value != arg.default:
-                    args.extend([arg.flag, str(value)])
-            else:
-                if value:
-                    if arg.flag:
-                        args.extend([arg.flag, str(value)])
-                    else:
-                        args.append(str(value))
-
-        return args
+        argv = build_argv_for_spec(self.spec, self.collect_values())
+        argv += render_global_args(self.collect_global_values())
+        argv += parse_raw_extra(self.raw_extra_var.get())
+        return argv
 
     def update_preview(self) -> None:
         from pip_ui.runner import PipRunner
@@ -210,9 +247,15 @@ class CommandForm(ttk.Frame):
         self.preview_argv.insert(tk.END, argv_json)
         self.preview_argv.configure(state=tk.DISABLED)
 
+        if self.on_form_change is not None:
+            self.on_form_change()
+
     def reset(self) -> None:
         for fw in self.field_widgets:
             fw.reset()
+        for fw in self.global_widgets:
+            fw.reset()
+        self.raw_extra_var.set("")
         self.update_preview()
 
     def do_run(self) -> None:
@@ -236,3 +279,69 @@ class CommandForm(ttk.Frame):
         text = runner.format_command(["python", "-m", "pip"] + argv)
         self.clipboard_clear()
         self.clipboard_append(text)
+
+    def save_preset(self) -> None:
+        if self.spec is None:
+            return
+        name = simpledialog.askstring("Save Preset", "Preset name:", parent=self)
+        if not name:
+            return
+        snapshot = {
+            "fields": self.collect_values(),
+            "globals": self.collect_global_values(),
+            "raw": self.raw_extra_var.get(),
+        }
+        self.presets.save(name, self.spec.name, snapshot)
+
+    def load_preset(self) -> None:
+        if self.spec is None:
+            return
+        names = self.presets.names_for(self.spec.name)
+        if not names:
+            from pip_ui.ui.dialogs import info_dialog
+
+            info_dialog(self, "No Presets", f"No saved presets for {self.spec.label}.")
+            return
+        win = tk.Toplevel(self)
+        win.title("Load Preset")
+        ttk.Label(win, text="Choose a preset:").pack(padx=8, pady=4, anchor=tk.W)
+        lb = tk.Listbox(win, height=min(12, len(names)))
+        for n in names:
+            lb.insert(tk.END, n)
+        lb.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
+
+        def apply_selected() -> None:
+            sel = lb.curselection()
+            if not sel:
+                return
+            chosen = names[sel[0]]
+            preset = self.presets.get(chosen)
+            if preset is None:
+                return
+            values = preset.get("values", {})
+            fields = values.get("fields", {})
+            globals_ = values.get("globals", {})
+            raw = values.get("raw", "")
+            for fw in self.field_widgets:
+                if fw.arg.name in fields:
+                    fw.set_value(fields[fw.arg.name])
+            for fw in self.global_widgets:
+                if fw.arg.name in globals_:
+                    fw.set_value(globals_[fw.arg.name])
+            self.raw_extra_var.set(str(raw or ""))
+            win.destroy()
+            self.update_preview()
+
+        def delete_selected() -> None:
+            sel = lb.curselection()
+            if not sel:
+                return
+            chosen = names[sel[0]]
+            self.presets.delete(chosen)
+            win.destroy()
+
+        btn = ttk.Frame(win)
+        btn.pack(fill=tk.X, padx=8, pady=4)
+        ttk.Button(btn, text="Load", command=apply_selected).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn, text="Delete", command=delete_selected).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn, text="Cancel", command=win.destroy).pack(side=tk.RIGHT, padx=2)

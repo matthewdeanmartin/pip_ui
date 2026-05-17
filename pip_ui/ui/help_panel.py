@@ -1,4 +1,4 @@
-"""Help panel with tabbed overview/safety/examples."""
+"""Help panel with tabbed overview/safety/examples/config."""
 
 from __future__ import annotations
 
@@ -8,20 +8,13 @@ from tkinter import ttk
 from typing import Any, Optional
 
 from pip_ui.models import CommandSpec, InterpreterInfo, SafetyLevel
-from pip_ui.safety import check_global_install, classify_command
+from pip_ui.safety import check_global_install, classify_command, collect_argv_warnings
 
 SAFETY_LABELS = {
     SafetyLevel.READ_ONLY: "Read Only - safe to run",
     SafetyLevel.MODIFIES_ENV: "Modifies Environment - changes installed packages",
-    SafetyLevel.DESTRUCTIVE: "Destructive - removes packages",
+    SafetyLevel.DESTRUCTIVE: "Destructive - removes packages or data",
     SafetyLevel.RISKY_CONFIG: "Risky Config - modifies pip configuration",
-}
-
-SAFETY_COLORS = {
-    SafetyLevel.READ_ONLY: "green",
-    SafetyLevel.MODIFIES_ENV: "orange",
-    SafetyLevel.DESTRUCTIVE: "red",
-    SafetyLevel.RISKY_CONFIG: "red",
 }
 
 EXAMPLES: dict[str, list[str]] = {
@@ -31,6 +24,8 @@ EXAMPLES: dict[str, list[str]] = {
         "Install from requirements file: -r requirements.txt",
         "Install editable local project: -e .",
         "Upgrade an existing package: requests (with Upgrade checked)",
+        "Install from internal index: -i https://internal.example.com/simple/",
+        "Install offline from wheelhouse: --no-index -f ./wheelhouse",
     ],
     "uninstall": [
         "Uninstall a package: requests",
@@ -50,27 +45,56 @@ EXAMPLES: dict[str, list[str]] = {
         "Output all installed packages in requirements format",
         "Exclude editable: check Exclude Editable",
     ],
-    "check": [
-        "Verify dependency compatibility: no options needed",
+    "check": ["Verify dependency compatibility: no options needed"],
+    "inspect": ["Inspect installed packages (JSON output)"],
+    "index_versions": [
+        "Show all versions of requests on PyPI",
+        "Show pre-release versions: check Include Pre-releases",
     ],
+    "download": [
+        "Download a package and its deps into ./wheelhouse",
+        "Restrict to a specific platform/python version for offline install",
+    ],
+    "wheel": ["Build wheels for the packages in requirements.txt into ./wheels"],
+    "lock": ["Generate a lockfile (requires recent pip)"],
+    "config_list": ["List active pip configuration values"],
+    "config_debug": ["Show pip configuration sources and effective values"],
+    "config_get": ["Read a config value: global.index-url"],
+    "config_set": ["Set a user-scope value: global.index-url https://internal.example.com/simple/"],
+    "config_unset": ["Remove a value: global.index-url"],
+    "config_edit": ["Open the user pip config file in an external editor"],
+    "cache_dir": ["Show the cache directory path"],
+    "cache_info": ["Show cache statistics"],
+    "cache_list": ["List cached wheels matching requests*"],
+    "cache_remove": ["Remove cached entries matching requests*"],
+    "cache_purge": ["Remove every cached pip artifact"],
 }
 
 TROUBLESHOOTING: dict[str, str] = {
     "install": (
         "Common errors:\n"
-        "- Permission denied: try user install or use a virtual environment\n"
-        "- No matching distribution found: check package name or index URL\n"
-        "- SSL error: check --trusted-host or network proxy settings"
+        "- Permission denied: use a virtual environment or --user.\n"
+        "- No matching distribution found: check package name, Python version, or --index-url.\n"
+        "- SSL error: check --cert/--client-cert or proxy.\n"
+        "- Externally-managed environment: use a venv; do not use --break-system-packages on system Python."
     ),
     "uninstall": (
         "Common errors:\n"
-        "- Package not found: package may not be installed\n"
-        "- Permission denied: you may not have write access to the environment"
+        "- Package not found: package may not be installed.\n"
+        "- Permission denied: you may not have write access to the environment."
     ),
     "list": (
-        "Common errors:\n"
-        "- 'tree' format requires pip >= 23.0\n"
-        "- '--outdated' makes network requests to PyPI"
+        "Notes:\n"
+        "- '--outdated' makes network requests to PyPI.\n"
+        "- 'tree' format is not always available; use json for scripting."
+    ),
+    "config_set": (
+        "Notes:\n"
+        "- Scope 'global' writes a machine-wide file and may require admin rights.\n"
+        "- 'user' is the safe default for personal use."
+    ),
+    "cache_purge": (
+        "Cache purge cannot be undone. Wheels you previously installed offline will need to be re-downloaded."
     ),
 }
 
@@ -88,6 +112,7 @@ class HelpPanel(ttk.Frame):
 
         self.overview_text = self.make_text_tab("Overview")
         self.command_text = self.make_text_tab("Generated Command")
+        self.config_text = self.make_text_tab("Active Config")
         self.safety_text = self.make_text_tab("Safety")
         self.examples_text = self.make_text_tab("Examples")
         self.troubleshooting_text = self.make_text_tab("Troubleshooting")
@@ -117,22 +142,55 @@ class HelpPanel(ttk.Frame):
         self.spec = spec
         self.interpreter_info = interpreter_info
 
-        self.set_text(self.overview_text, f"{spec.label}\n\n{spec.description}\n\nSafety: {SAFETY_LABELS.get(spec.safety_level, str(spec.safety_level))}")
+        self.set_text(
+            self.overview_text,
+            f"{spec.label}\n\n{spec.description}\n\n"
+            f"Safety: {SAFETY_LABELS.get(spec.safety_level, str(spec.safety_level))}",
+        )
 
         from pip_ui.runner import PipRunner
+
         runner = PipRunner()
         python = interpreter_info.path if interpreter_info else "python"
         full_argv = runner.build_argv(python, argv)
         shell_cmd = runner.format_command(full_argv)
-        self.set_text(self.command_text, f"Shell command:\n{shell_cmd}\n\nArgv JSON:\n{json.dumps(argv, indent=2)}")
+        redacted_argv = runner.redact_argv(full_argv)
+        redacted_cmd = runner.format_command(redacted_argv)
+        body = (
+            f"Shell command:\n{shell_cmd}\n\n"
+            f"Redacted (shown in logs):\n{redacted_cmd}\n\n"
+            f"Argv JSON:\n{json.dumps(argv, indent=2)}"
+        )
+        self.set_text(self.command_text, body)
+
+        # Active config snapshot.
+        cfg_lines: list[str] = []
+        if interpreter_info is None:
+            cfg_lines.append("No interpreter selected.")
+        else:
+            cfg_lines.append(f"Interpreter: {interpreter_info.path}")
+            cfg_lines.append(f"Python: {interpreter_info.version}")
+            cfg_lines.append(f"Pip: {interpreter_info.pip_version}")
+            cfg_lines.append(f"Env type: {interpreter_info.env_type}")
+            cfg_lines.append(f"Virtual env: {'yes' if interpreter_info.is_venv else 'no'}")
+            cfg_lines.append("")
+            cfg_lines.append("Open View → Config Dashboard for full configuration details.")
+        self.set_text(self.config_text, "\n".join(cfg_lines))
 
         safety_level = classify_command(spec.name)
-        safety_text = SAFETY_LABELS.get(safety_level, str(safety_level)) + "\n"
-        if interpreter_info is not None:
+        parts: list[str] = [SAFETY_LABELS.get(safety_level, str(safety_level))]
+        if interpreter_info is not None and safety_level != SafetyLevel.READ_ONLY:
             warning = check_global_install(interpreter_info)
-            if warning and safety_level != SafetyLevel.READ_ONLY:
-                safety_text += f"\n{warning}"
-        self.set_text(self.safety_text, safety_text)
+            if warning:
+                parts.append("")
+                parts.append(warning)
+        argv_warnings = collect_argv_warnings(argv)
+        if argv_warnings:
+            parts.append("")
+            parts.append("Argument warnings:")
+            for w in argv_warnings:
+                parts.append(f"- {w}")
+        self.set_text(self.safety_text, "\n".join(parts))
 
         examples = EXAMPLES.get(spec.name, ["No examples available."])
         self.set_text(self.examples_text, "\n".join(f"- {ex}" for ex in examples))

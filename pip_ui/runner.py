@@ -4,14 +4,19 @@ from __future__ import annotations
 
 import re
 import subprocess
+import sys
 import threading
 from typing import Callable, Optional
+
+
+CRED_RE = re.compile(r"(://)[^:@/\s]+:[^@/\s]+@")
 
 
 class PipRunner:
     def __init__(self) -> None:
         self.process: Optional[subprocess.Popen[str]] = None
         self.cancelled = False
+        self.killed = False
 
     def build_argv(self, python_path: str, pip_args: list[str]) -> list[str]:
         return [python_path, "-m", "pip"] + pip_args
@@ -27,8 +32,10 @@ class PipRunner:
 
     @staticmethod
     def redact_argv(argv: list[str]) -> list[str]:
-        pattern = re.compile(r"(://)[^:@/]+:[^@/]+@")
-        return [pattern.sub(r"\1<redacted>:<redacted>@", arg) for arg in argv]
+        return [CRED_RE.sub(r"\1<redacted>:<redacted>@", arg) for arg in argv]
+
+    def is_running(self) -> bool:
+        return self.process is not None and self.process.poll() is None
 
     def run(
         self,
@@ -39,6 +46,7 @@ class PipRunner:
         on_done: Callable[[int], None],
     ) -> None:
         self.cancelled = False
+        self.killed = False
 
         def worker() -> None:
             try:
@@ -68,7 +76,12 @@ class PipRunner:
                 stdout_thread.join()
                 stderr_thread.join()
                 self.process.wait()
-                exit_code = self.process.returncode if not self.cancelled else -1
+                if self.killed:
+                    exit_code = -9
+                elif self.cancelled:
+                    exit_code = -1
+                else:
+                    exit_code = self.process.returncode
             except Exception:
                 exit_code = -1
             finally:
@@ -78,14 +91,23 @@ class PipRunner:
         thread.start()
 
     def read_stream(self, stream: object, callback: Callable[[str], None]) -> None:
-        import io
         for line in iter(stream.readline, ""):  # type: ignore[attr-defined]
             callback(line)
 
-    def cancel(self) -> None:
-        self.cancelled = True
-        if self.process is not None:
-            try:
+    def cancel(self, force: bool = False) -> bool:
+        """Cancel the running process.
+
+        Returns True if a signal was sent. ``force=True`` escalates to kill.
+        """
+        if self.process is None:
+            return False
+        try:
+            if force:
+                self.killed = True
+                self.process.kill()
+            else:
+                self.cancelled = True
                 self.process.terminate()
-            except Exception:
-                pass
+            return True
+        except Exception:
+            return False
