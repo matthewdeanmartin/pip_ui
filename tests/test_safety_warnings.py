@@ -1,5 +1,6 @@
 """Tests for argv-based safety warnings and error hints."""
 
+from pip_ui.models import SafetyLevel
 from pip_ui.safety import (
     classify_command,
     collect_argv_warnings,
@@ -7,7 +8,6 @@ from pip_ui.safety import (
     contains_credentials,
     explain_pip_error,
 )
-from pip_ui.models import SafetyLevel
 
 
 def test_warn_break_system_packages():
@@ -31,9 +31,7 @@ def test_warn_http():
 
 
 def test_warn_credentials_in_url():
-    warnings = collect_argv_warnings(
-        ["install", "requests", "-i", "https://u:p@internal.example.com/simple"]
-    )
+    warnings = collect_argv_warnings(["install", "requests", "-i", "https://u:p@internal.example.com/simple"])
     assert any("credential" in w.lower() for w in warnings)
 
 

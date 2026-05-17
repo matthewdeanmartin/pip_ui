@@ -33,9 +33,7 @@ class ConfigView(tk.Toplevel):
         toolbar = ttk.Frame(self)
         toolbar.pack(fill=tk.X, padx=8, pady=4)
         ttk.Button(toolbar, text="Refresh", command=self.populate).pack(side=tk.LEFT, padx=2)
-        ttk.Button(toolbar, text="Export Diagnostics...", command=self.export_diagnostics).pack(
-            side=tk.LEFT, padx=2
-        )
+        ttk.Button(toolbar, text="Export Diagnostics...", command=self.export_diagnostics).pack(side=tk.LEFT, padx=2)
         ttk.Checkbutton(
             toolbar,
             text="Show Sensitive Values",
@@ -55,9 +53,7 @@ class ConfigView(tk.Toplevel):
 
         self.content_frame = ttk.Frame(self.canvas)
         self.canvas_window = self.canvas.create_window((0, 0), window=self.content_frame, anchor=tk.NW)
-        self.content_frame.bind(
-            "<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-        )
+        self.content_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
         self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfig(self.canvas_window, width=e.width))
         self.canvas.bind("<Enter>", lambda e: self.canvas.bind_all("<MouseWheel>", self.on_wheel))
         self.canvas.bind("<Leave>", lambda e: self.canvas.unbind_all("<MouseWheel>"))
@@ -109,9 +105,7 @@ class ConfigView(tk.Toplevel):
             if config_files:
                 lines = []
                 for c in config_files:
-                    lines.append(
-                        f"[{c.scope}] {c.path}\n    exists={c.exists}  size={c.size}  modified={c.modified}"
-                    )
+                    lines.append(f"[{c.scope}] {c.path}\n    exists={c.exists}  size={c.size}  modified={c.modified}")
                 self.add_section("Config Files", "\n".join(lines))
             else:
                 self.add_section("Config Files", "(none reported by pip config debug)")

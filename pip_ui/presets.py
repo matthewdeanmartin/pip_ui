@@ -17,7 +17,7 @@ class PresetStore:
         if not self.presets_file.exists():
             return {}
         try:
-            with open(self.presets_file, "r", encoding="utf-8") as fh:
+            with open(self.presets_file, encoding="utf-8") as fh:
                 data = json.load(fh)
                 if isinstance(data, dict):
                     return data

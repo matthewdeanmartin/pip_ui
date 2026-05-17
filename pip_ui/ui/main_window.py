@@ -112,9 +112,7 @@ class MainWindow(tk.Tk):
         middle_paned = ttk.PanedWindow(self.horizontal_paned, orient=tk.VERTICAL)
         self.horizontal_paned.add(middle_paned, weight=2)
 
-        self.command_form = CommandForm(
-            middle_paned, on_run=self.run_command, on_form_change=self.on_form_change
-        )
+        self.command_form = CommandForm(middle_paned, on_run=self.run_command, on_form_change=self.on_form_change)
         middle_paned.add(self.command_form, weight=1)
 
         self.output_panel = OutputPanel(middle_paned, on_cancel=self.on_cancel_running)
@@ -151,9 +149,7 @@ class MainWindow(tk.Tk):
             self.settings.set("last_interpreter", info.path)
             # Re-render help/right panel with the new interpreter.
             if self.command_form.spec is not None:
-                self.help_panel.update_for_command(
-                    self.command_form.spec, self.command_form.get_argv(), info
-                )
+                self.help_panel.update_for_command(self.command_form.spec, self.command_form.get_argv(), info)
 
     def browse_workdir(self) -> None:
         from tkinter import filedialog
@@ -169,9 +165,7 @@ class MainWindow(tk.Tk):
         if spec is None:
             return
         self.command_form.set_command(spec)
-        self.help_panel.update_for_command(
-            spec, self.command_form.get_argv(), self.current_interpreter
-        )
+        self.help_panel.update_for_command(spec, self.command_form.get_argv(), self.current_interpreter)
 
     def on_form_change(self) -> None:
         if self.command_form.spec is None:
@@ -226,15 +220,17 @@ class MainWindow(tk.Tk):
         redacted_argv = PipRunner.redact_argv(full_argv)
         display_argv = full_argv if self.show_secrets.get() else redacted_argv
 
-        self.output_panel.set_command_info({
-            "Command": label,
-            "Interpreter": self.current_interpreter.path,
-            "Python Version": self.current_interpreter.version,
-            "Pip Version": self.current_interpreter.pip_version,
-            "Working Directory": cwd,
-            "Argv": str(display_argv),
-            "Started": datetime.now().isoformat(timespec="seconds"),
-        })
+        self.output_panel.set_command_info(
+            {
+                "Command": label,
+                "Interpreter": self.current_interpreter.path,
+                "Python Version": self.current_interpreter.version,
+                "Pip Version": self.current_interpreter.pip_version,
+                "Working Directory": cwd,
+                "Argv": str(display_argv),
+                "Started": datetime.now().isoformat(timespec="seconds"),
+            }
+        )
 
         self.run_start_time = datetime.now()
 
@@ -313,11 +309,13 @@ class MainWindow(tk.Tk):
             self.output_panel.append_combined(f"[hint] {hint}\n", tag="hint")
 
         # Update command-info tab with final metadata.
-        self.output_panel.append_command_info({
-            "Exit Code": exit_code,
-            "Ended": end_time.isoformat(timespec="seconds"),
-            "Duration (s)": f"{duration:.3f}",
-        })
+        self.output_panel.append_command_info(
+            {
+                "Exit Code": exit_code,
+                "Ended": end_time.isoformat(timespec="seconds"),
+                "Duration (s)": f"{duration:.3f}",
+            }
+        )
 
         self.output_panel.set_running(False)
 

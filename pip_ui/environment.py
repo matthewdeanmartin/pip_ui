@@ -58,6 +58,7 @@ class InterpreterDiscovery:
 
     def which(self, name: str) -> Optional[str]:
         import shutil
+
         return shutil.which(name)
 
     def validate(self, path: str) -> Optional[InterpreterInfo]:

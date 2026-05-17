@@ -74,8 +74,10 @@ class FieldWidget:
         if self.arg.field_type == "checkbox":
             self.var.set(bool(self.arg.default))
         elif self.arg.field_type == "dropdown":
-            default = str(self.arg.default) if self.arg.default is not None else (
-                self.arg.choices[0] if self.arg.choices else ""
+            default = (
+                str(self.arg.default)
+                if self.arg.default is not None
+                else (self.arg.choices[0] if self.arg.choices else "")
             )
             self.var.set(default)
         else:
@@ -232,6 +234,7 @@ class CommandForm(ttk.Frame):
 
     def update_preview(self) -> None:
         from pip_ui.runner import PipRunner
+
         argv = self.get_argv()
         runner = PipRunner()
         shell_str = runner.format_command(["python", "-m", "pip"] + argv)
@@ -274,6 +277,7 @@ class CommandForm(ttk.Frame):
 
     def copy_command(self) -> None:
         from pip_ui.runner import PipRunner
+
         argv = self.get_argv()
         runner = PipRunner()
         text = runner.format_command(["python", "-m", "pip"] + argv)

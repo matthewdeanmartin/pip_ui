@@ -18,15 +18,20 @@ def test_cancel_returns_false_when_no_process():
 
 def test_redact_argv_multiple_credentials():
     argv = [
-        "python", "-m", "pip", "install",
-        "-i", "https://u1:p1@a.example.com/simple",
-        "--extra-index-url", "https://u2:p2@b.example.com/simple",
+        "python",
+        "-m",
+        "pip",
+        "install",
+        "-i",
+        "https://u1:p1@a.example.com/simple",
+        "--extra-index-url",
+        "https://u2:p2@b.example.com/simple",
     ]
     out = PipRunner.redact_argv(argv)
     for tok in out:
         assert "p1" not in tok
         assert "p2" not in tok
-    assert out.count("<redacted>") >= 0  # noqa: PLR2004 - presence check below
+    assert out.count("<redacted>") >= 0
     assert sum(1 for t in out if "<redacted>:<redacted>@" in t) == 2
 
 

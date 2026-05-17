@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -35,7 +34,7 @@ class CommandHistory:
         if not self.history_file.exists():
             return []
         entries: list[HistoryEntry] = []
-        with open(self.history_file, "r", encoding="utf-8") as fh:
+        with open(self.history_file, encoding="utf-8") as fh:
             for line in fh:
                 line = line.strip()
                 if not line:

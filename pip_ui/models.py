@@ -5,7 +5,6 @@ from __future__ import annotations
 import enum
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 
 
 class SafetyLevel(enum.Enum):

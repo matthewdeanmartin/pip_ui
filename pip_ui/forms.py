@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pip_ui.command_specs import SPECIAL_ARGV, COMMAND_SPECS
+from pip_ui.command_specs import COMMAND_SPECS, SPECIAL_ARGV
 from pip_ui.models import ArgSpec, CommandSpec
 
 

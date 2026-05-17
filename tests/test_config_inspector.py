@@ -20,6 +20,7 @@ def test_parse_config_list():
 
 def test_redact_env_vars():
     from pip_ui.safety import redact_url
+
     url_with_creds = "https://user:secret@pypi.example.com/simple"
     result = redact_url(url_with_creds)
     assert "user" not in result
@@ -55,6 +56,7 @@ def test_build_diagnostics_report_markdown():
 
 def test_build_diagnostics_report_json():
     import json
+
     inspector = ConfigInspector(sys.executable)
     report = inspector.build_diagnostics_report("json")
     data = json.loads(report)

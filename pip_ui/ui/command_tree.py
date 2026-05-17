@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
-from pip_ui.command_specs import COMMAND_GROUPS, COMMAND_SPECS, get_commands_by_group
-from pip_ui.models import CommandSpec
+from pip_ui.command_specs import COMMAND_GROUPS, get_commands_by_group
 
 
 class CommandTree(ttk.Frame):
@@ -54,7 +53,8 @@ class CommandTree(ttk.Frame):
         for group in COMMAND_GROUPS:
             specs = commands_by_group.get(group, [])
             matching = [
-                s for s in specs
+                s
+                for s in specs
                 if not ft or ft in s.name.lower() or ft in s.label.lower() or ft in s.description.lower()
             ]
             if not matching:

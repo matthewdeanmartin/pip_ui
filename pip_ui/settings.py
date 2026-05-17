@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 DEFAULTS: dict[str, Any] = {
     "last_interpreter": None,
@@ -28,7 +28,7 @@ class AppSettings:
             self.cache = dict(DEFAULTS)
             return self.cache
         try:
-            with open(self.settings_file, "r", encoding="utf-8") as fh:
+            with open(self.settings_file, encoding="utf-8") as fh:
                 data = json.load(fh)
         except (json.JSONDecodeError, OSError):
             data = {}

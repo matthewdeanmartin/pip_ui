@@ -1,7 +1,6 @@
 """Tests for environment module."""
 
 import sys
-from pathlib import Path
 
 from pip_ui.environment import InterpreterDiscovery
 
@@ -45,6 +44,7 @@ def test_discover_finds_at_least_one():
 
 def test_discover_returns_list_of_interpreter_info():
     from pip_ui.models import InterpreterInfo
+
     discovery = InterpreterDiscovery()
     results = discovery.discover()
     for item in results:

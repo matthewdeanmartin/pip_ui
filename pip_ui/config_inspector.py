@@ -120,11 +120,7 @@ class ConfigInspector:
         config = self.run_config_list()
         env = self.get_env_vars(show_secrets=True)
 
-        main_index = (
-            config.get("global.index-url")
-            or env.get("PIP_INDEX_URL")
-            or None
-        )
+        main_index = config.get("global.index-url") or env.get("PIP_INDEX_URL") or None
         extra_raw = config.get("global.extra-index-url") or env.get("PIP_EXTRA_INDEX_URL") or ""
         extras = [x.strip() for x in re.split(r"[\s,]+", extra_raw) if x.strip()]
 
@@ -218,9 +214,7 @@ class ConfigInspector:
                 for c in config_files:
                     mod = c.modified or "-"
                     size = c.size if c.size is not None else "-"
-                    lines.append(
-                        f"- `{c.path}` ({c.scope}) - exists: {c.exists}, size: {size}, modified: {mod}"
-                    )
+                    lines.append(f"- `{c.path}` ({c.scope}) - exists: {c.exists}, size: {size}, modified: {mod}")
             else:
                 lines.append("_No config files reported._")
             lines += ["", "## Active Config Values", ""]

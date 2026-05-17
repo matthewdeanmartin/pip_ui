@@ -11,7 +11,9 @@ from pip_ui.models import InterpreterInfo
 
 
 class InterpreterPicker(ttk.Frame):
-    def __init__(self, parent: tk.Widget, on_change: Callable[[Optional[InterpreterInfo]], None], **kwargs: Any) -> None:
+    def __init__(
+        self, parent: tk.Widget, on_change: Callable[[Optional[InterpreterInfo]], None], **kwargs: Any
+    ) -> None:
         super().__init__(parent, **kwargs)
         self.on_change = on_change
         self.interpreters: list[InterpreterInfo] = []
@@ -45,8 +47,9 @@ class InterpreterPicker(ttk.Frame):
             self.on_change(self.selected)
 
     def browse(self) -> None:
-        from pip_ui.ui.dialogs import browse_interpreter_dialog
         from pip_ui.environment import InterpreterDiscovery
+        from pip_ui.ui.dialogs import browse_interpreter_dialog
+
         path = browse_interpreter_dialog(self)
         if not path:
             return
@@ -54,6 +57,7 @@ class InterpreterPicker(ttk.Frame):
         info = discovery.validate(path)
         if info is None:
             from pip_ui.ui.dialogs import error_dialog
+
             error_dialog(self, "Invalid Interpreter", f"Could not validate Python interpreter at:\n{path}")
             return
         self.interpreters.append(info)

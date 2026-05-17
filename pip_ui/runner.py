@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import re
 import subprocess
-import sys
 import threading
 from typing import Callable, Optional
-
 
 CRED_RE = re.compile(r"(://)[^:@/\s]+:[^@/\s]+@")
 
