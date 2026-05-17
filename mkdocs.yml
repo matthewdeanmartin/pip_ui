@@ -14,8 +14,8 @@ markdown_extensions:
   - toc:
       permalink: true
 nav:
-  - Overview:
-      - Readme.md: overview/README.md
+  - Home: README.md
+  - Overview: overview/README.md
   - Installation: installation.md
   - Usage:
       - Quick Start: usage/quickstart.md
@@ -24,7 +24,10 @@ nav:
       - Configuration & Editors: usage/configuration.md
       - Presets: usage/presets.md
   - Contributing: extending/CONTRIBUTING.md
+  - Code of Conduct: CODE_OF_CONDUCT.md
   - Change Log: CHANGELOG.md
+  - Security: SECURITY.md
+  - License: LICENSE.md
 validation:
   nav:
     omitted_files: warn
