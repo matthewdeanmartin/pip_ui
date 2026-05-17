@@ -109,8 +109,8 @@ class InterpreterDiscovery:
                     check=False,
                     shell=False,
                     timeout=10,
-                ),
-            )  # nosec B603
+                ),  # nosec B603
+            )
             if result.returncode == 0:
                 parts = result.stdout.strip().split()
                 if len(parts) >= 2:
