@@ -1,11 +1,11 @@
 # pip-ui Extras — Final Steps and Future Work
 
-**Date written:** 2026-05-17  
+**Date written:** 2026-05-17\
 **Status:** Implementation complete through section 13. Remaining items are docs/polish only.
 
 Cross-reference: `spec/spec_extras.md`, `spec/extras_remaining.md`
 
----
+______________________________________________________________________
 
 ## What is done
 
@@ -31,76 +31,77 @@ test suite (286 tests). A brief inventory:
 | 12 | `AppSettings.get_tool_options(name)`, `set_tool_options(name, opts)` — per-tool settings dict |
 | 13 | 82 new unit/smoke tests across five new test files |
 
----
+______________________________________________________________________
 
 ## What is NOT done (known gaps)
 
 ### From the original remaining list
 
-- **Section 8 — Tools menu "Switch Tool" submenu** (low priority).  
+- **Section 8 — Tools menu "Switch Tool" submenu** (low priority).\
   The tab row makes this redundant. Omitted intentionally.
 
-- **Section 8 — About dialog tool mention.**  
+- **Section 8 — About dialog tool mention.**\
   The About dialog still hard-codes the pip description. Small cosmetic gap.
 
-- **Section 14 — Docs / README.**  
+- **Section 14 — Docs / README.**\
   See the Docs section below.
 
 ### Remaining limitations (post-fix)
 
-- **`AuditResultPanel` pops a new Toplevel window.**  
+- **`AuditResultPanel` pops a new Toplevel window.**\
   The spec says "parse and show" but is silent on modal vs. inline. The current
   implementation opens a `Toplevel`. Works fine; a future iteration could embed it in the
   middle pane instead.
 
-- **`pip-audit` uses a plain `CommandForm`, not `AuditResultPanel` as its `panel_class`.**  
+- **`pip-audit` uses a plain `CommandForm`, not `AuditResultPanel` as its `panel_class`.**\
   Intentional: the result panel is a post-run display, not an input form. The trigger lives
   in `MainWindow._try_show_audit_result`.
 
----
+______________________________________________________________________
 
 ## Missing wiring — FIXED
 
 All five wiring gaps have been closed:
 
-1. **`browse_workdir` → `set_workdir` on custom panels.** ✅  
+1. **`browse_workdir` → `set_workdir` on custom panels.** ✅\
    `MainWindow.browse_workdir` now calls `self.command_form.set_workdir(path)` when the
    active panel supports it.
 
-2. **`OutputPanel.get_stdout_text()`.** ✅  
+1. **`OutputPanel.get_stdout_text()`.** ✅\
    Method added to `OutputPanel`. `_try_show_audit_result` calls it directly without the
    `hasattr` guard.
 
-3. **`notify_run_done` ordering bug.** ✅  
+1. **`notify_run_done` ordering bug.** ✅\
    `on_run_done` now captures `finished_command = self.current_run_command` before setting
    it to `None`, so custom-panel notification and audit post-processing use the correct name.
 
-4. **pipx `--python` injection.** ✅  
+1. **pipx `--python` injection.** ✅\
    `run_command` now injects `--python <path>` into `effective_pip_args` when the active
    tool is pipx and a non-default Python was selected in `PipxPythonPicker`. The
    `current_interpreter is None` guard is relaxed for pipx (global_cli tool).
 
-5. **Help panel "Command Help" tab for non-pip tools.** ✅  
+1. **Help panel "Command Help" tab for non-pip tools.** ✅\
    `HelpPanel` now has `set_active_plugin(plugin)` which stores `run_via`, `module`, and
    `executable`. `populate_command_help` dispatches on `run_via`:
+
    - `python_module` + pip → existing `pip help <sub>` path
    - `python_module` + other → `python -m <module> <sub> --help`
    - `global_cli` → `<executable> <subcommand parts> --help`
-   `on_tool_switch` in `MainWindow` calls `help_panel.set_active_plugin(plugin)`.
+     `on_tool_switch` in `MainWindow` calls `help_panel.set_active_plugin(plugin)`.
 
 **Remaining before 0.3.0 release:**
 
----
+______________________________________________________________________
 
-- **Version number.**  
+- **Version number.**\
   `__version__` is still `"0.1.0"` in `pip_ui/__about__.py`. Bump to `"0.3.0"` when
   section 14 (docs) is complete.
 
----
+______________________________________________________________________
 
 ## Section 14 — Docs (remaining)
 
-- **`README.md` extras install table.**  
+- **`README.md` extras install table.**\
   Add a table under the Installation section:
 
   | Extra | What you get |
@@ -114,19 +115,19 @@ All five wiring gaps have been closed:
   | `pip install pip-ui-tkinter[pipx]` | pipx apps panel |
   | `pip install pip-ui-tkinter[all-tools]` | Everything above |
 
-- **`CHANGELOG.md` 0.3.0 entry.**  
+- **`CHANGELOG.md` 0.3.0 entry.**\
   Write release notes once the missing wiring (above) is closed.
 
-- **mkdocs pages.**  
+- **mkdocs pages.**\
   One page per tool (`docs/tools/build.md`, `docs/tools/virtualenv.md`, etc.) with the
   command reference table from `spec/spec_extras.md`. The `mkdocs.yml` nav already has a
   `Tools` section placeholder.
 
-- **Screenshot update.**  
+- **Screenshot update.**\
   Replace the pip-only screenshot in `README.md` with one showing the tool tab row and at
   least the HatchEnvPanel or PipxAppsPanel.
 
----
+______________________________________________________________________
 
 ## Future / nice-to-have (not planned for 0.3.0)
 
@@ -146,7 +147,7 @@ All five wiring gaps have been closed:
   instead of a floating Toplevel, by temporarily swapping it for the output panel after a
   JSON audit run completes.
 
----
+______________________________________________________________________
 
 ## Dependency order for remaining work
 

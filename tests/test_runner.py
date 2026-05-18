@@ -80,7 +80,7 @@ def test_run_uses_utf8_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
             self.stderr = FakeStream()
             self.returncode = 0
 
-        def __enter__(self) -> FakePopen:
+        def __enter__(self) -> Any:
             return self
 
         def __exit__(self, exc_type: Any, exc: Any, tb: Any) -> None:

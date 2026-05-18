@@ -1,10 +1,10 @@
 # Spec: pip-ui Extras — PyPA Tool Support
 
-**Status:** Revised — open questions resolved  
-**Scope:** Optional install extras for wheel, build, virtualenv, twine, pip-audit, hatch, flit, pipx  
+**Status:** Revised — open questions resolved\
+**Scope:** Optional install extras for wheel, build, virtualenv, twine, pip-audit, hatch, flit, pipx\
 **Out of scope:** Tools requiring native code compilation; tools where PyPA/PSF is not the primary maintainer
 
----
+______________________________________________________________________
 
 ## Background
 
@@ -18,7 +18,7 @@ flag-and-positional structure to pip. Others (virtualenv, hatch, flit, pipx) hav
 apps) that benefits from custom middle-panel widgets beyond the generic `CommandForm`. The goal is to keep pip-ui as the
 single entry point while making each tool's UX feel appropriate.
 
----
+______________________________________________________________________
 
 ## Packaging: Extras
 
@@ -31,22 +31,22 @@ pip install pip-ui-tkinter[all-tools]
 
 Extras defined in `pyproject.toml`:
 
-| Extra        | Dependencies added |
+| Extra | Dependencies added |
 |--------------|--------------------|
-| `build`      | `build>=1.0`       |
+| `build` | `build>=1.0` |
 | `virtualenv` | `virtualenv>=20.0` |
-| `twine`      | `twine>=5.0`       |
-| `pip-audit`  | `pip-audit>=2.7`   |
-| `hatch`      | `hatch>=1.9`       |
-| `flit`       | `flit>=3.9`        |
-| `pipx`       | `pipx>=1.4`        |
-| `all`        | all of the above   |
+| `twine` | `twine>=5.0` |
+| `pip-audit` | `pip-audit>=2.7` |
+| `hatch` | `hatch>=1.9` |
+| `flit` | `flit>=3.9` |
+| `pipx` | `pipx>=1.4` |
+| `all` | all of the above |
 
 The base `pip-ui-tkinter` package remains zero-dependency. Each extra is detected at runtime with
 `importlib.util.find_spec()` or a `shutil.which()` call. If the tool is not installed, its tree section is either hidden
 or shows a one-line "install with: pip install pip-ui-tkinter[X]" placeholder node.
 
----
+______________________________________________________________________
 
 ## Architecture Changes
 
@@ -82,11 +82,11 @@ Detection runs at startup and again whenever the interpreter changes. See **Dete
 Switching tabs:
 
 1. Replaces `command_tree` contents with the selected tool's groups and commands.
-2. Swaps `command_form` (middle-top panel) for the tool's `panel_class`, or falls back to `CommandForm`.
-3. Updates the help panel's documentation URL base.
-4. For tools where the interpreter picker is irrelevant (pipx), hides the interpreter row and shows the tool-specific controls instead (see pipx section).
-5. For project-scoped tools (hatch, flit), renames the "Dir:" label to "Project Dir:".
-6. Persists the last-used tool in `AppSettings`.
+1. Swaps `command_form` (middle-top panel) for the tool's `panel_class`, or falls back to `CommandForm`.
+1. Updates the help panel's documentation URL base.
+1. For tools where the interpreter picker is irrelevant (pipx), hides the interpreter row and shows the tool-specific controls instead (see pipx section).
+1. For project-scoped tools (hatch, flit), renames the "Dir:" label to "Project Dir:".
+1. Persists the last-used tool in `AppSettings`.
 
 The title bar updates to `pip-ui v{version} — {tool label}`.
 
@@ -108,7 +108,7 @@ Global options (verbose, proxy, cert, timeout) are pip-specific. Each tool plugi
 `global_options_class: type | None`. `None` means no global options dialog is shown for that tool. Tools that have
 relevant global-style flags (e.g. twine's `--repository`) get their own `GlobalOptionsDialog` subclass.
 
----
+______________________________________________________________________
 
 ## Per-Tool Specs
 
@@ -116,33 +116,33 @@ relevant global-style flags (e.g. twine's `--repository`) get their own `GlobalO
 
 **Groups:** Build
 
-| Command       | Label       | Safety         | Key Args                                                                                                                                                                                           |
+| Command | Label | Safety | Key Args |
 |---------------|-------------|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `build`       | Build       | `MODIFIES_ENV` | source dir (positional, dir picker); `--wheel` checkbox; `--sdist` checkbox; `--outdir` dir picker; `--no-isolation` checkbox; `--skip-dependency-check` checkbox; `--installer` dropdown (pip/uv) |
-| `build_wheel` | Build Wheel | `MODIFIES_ENV` | source dir; `--outdir`; `--no-isolation`                                                                                                                                                           |
-| `build_sdist` | Build sdist | `MODIFIES_ENV` | source dir; `--outdir`                                                                                                                                                                             |
+| `build` | Build | `MODIFIES_ENV` | source dir (positional, dir picker); `--wheel` checkbox; `--sdist` checkbox; `--outdir` dir picker; `--no-isolation` checkbox; `--skip-dependency-check` checkbox; `--installer` dropdown (pip/uv) |
+| `build_wheel` | Build Wheel | `MODIFIES_ENV` | source dir; `--outdir`; `--no-isolation` |
+| `build_sdist` | Build sdist | `MODIFIES_ENV` | source dir; `--outdir` |
 
-Auto-run on select: none (requires a source dir).  
-Working directory is used as the default source dir.  
+Auto-run on select: none (requires a source dir).\
+Working directory is used as the default source dir.\
 The `pyproject.toml` in the working directory is detected and shown as a hint in the help panel.
 
----
+______________________________________________________________________
 
 ### `wheel` (`pip wheel` — already in pip, but surfaced more prominently)
 
 This command already exists in `COMMAND_SPECS`. No new extra needed. The existing "Artifacts" group gains better
 visibility via the tool switcher if users install nothing extra.
 
----
+______________________________________________________________________
 
 ### `virtualenv`
 
 **Groups:** Create, Manage
 
-| Command   | Label      | Safety         | Key Args                                                                                                                                                                                                                                                             |
+| Command | Label | Safety | Key Args |
 |-----------|------------|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `create`  | Create Env | `MODIFIES_ENV` | dest dir (positional, dir picker, required); `--python` text (interpreter path); `--system-site-packages` checkbox; `--copies` checkbox; `--clear` checkbox; `--prompt` text; `--creator` dropdown (builtin/venv/cpython3-posix); `--seeder` dropdown (pip/app-data) |
-| `version` | Version    | `READ_ONLY`    | —                                                                                                                                                                                                                                                                    |
+| `create` | Create Env | `MODIFIES_ENV` | dest dir (positional, dir picker, required); `--python` text (interpreter path); `--system-site-packages` checkbox; `--copies` checkbox; `--clear` checkbox; `--prompt` text; `--creator` dropdown (builtin/venv/cpython3-posix); `--seeder` dropdown (pip/app-data) |
+| `version` | Version | `READ_ONLY` | — |
 
 **Custom middle panel:** `VirtualenvPanel` — after a successful `create`, shows a one-click "Activate in new terminal"
 button that launches a shell with the env activated (Windows: `cmd /K activate.bat`; POSIX:
@@ -150,17 +150,17 @@ button that launches a shell with the env activated (Windows: `cmd /K activate.b
 
 Auto-run on select: `version`.
 
----
+______________________________________________________________________
 
 ### `twine`
 
 **Groups:** Upload, Check
 
-| Command   | Label       | Safety         | Key Args                                                                                                                                                                                                                                                                       |
+| Command | Label | Safety | Key Args |
 |-----------|-------------|----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `upload`  | Upload      | `MODIFIES_ENV` | dists glob (multi, file picker, required); `--repository` text (default: pypi); `--repository-url` text; `--username` text; `--password` secret text; `--skip-existing` checkbox; `--disable-progress-bar` checkbox; `--cert` file; `--client-cert` file; `--verbose` checkbox |
-| `check`   | Check Dists | `READ_ONLY`    | dists (multi, file picker, required); `--strict` checkbox                                                                                                                                                                                                                      |
-| `version` | Version     | `READ_ONLY`    | —                                                                                                                                                                                                                                                                              |
+| `upload` | Upload | `MODIFIES_ENV` | dists glob (multi, file picker, required); `--repository` text (default: pypi); `--repository-url` text; `--username` text; `--password` secret text; `--skip-existing` checkbox; `--disable-progress-bar` checkbox; `--cert` file; `--client-cert` file; `--verbose` checkbox |
+| `check` | Check Dists | `READ_ONLY` | dists (multi, file picker, required); `--strict` checkbox |
+| `version` | Version | `READ_ONLY` | — |
 
 **Note:** `--password` is a `secret` field type — rendered as `ttk.Entry(show="*")` and redacted in output/history. The
 existing `show_secrets` toggle reveals it.
@@ -174,23 +174,23 @@ installed version, vuln ID, fix version, severity). For all other formats the ra
 
 Auto-run on select: `version`.
 
----
+______________________________________________________________________
 
 ### `pip-audit`
 
 **Groups:** Audit
 
-| Command   | Label   | Safety      | Key Args                                                                                                                                                                                                                                                                                                                                          |
+| Command | Label | Safety | Key Args |
 |-----------|---------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `audit`   | Audit   | `READ_ONLY` | `--requirement` file picker (multi); `--output` dropdown (columns/json/cyclonedx-json/cyclonedx-xml); `--vulnerability-service` dropdown (osv/pypi); `--fix` checkbox (safety: `MODIFIES_ENV`); `--dry-run` checkbox; `--skip-editable` checkbox; `--ignore-vuln` multi text; `--disable-pip` checkbox; `--no-deps` checkbox; `--timeout` spinbox |
-| `version` | Version | `READ_ONLY` | —                                                                                                                                                                                                                                                                                                                                                 |
+| `audit` | Audit | `READ_ONLY` | `--requirement` file picker (multi); `--output` dropdown (columns/json/cyclonedx-json/cyclonedx-xml); `--vulnerability-service` dropdown (osv/pypi); `--fix` checkbox (safety: `MODIFIES_ENV`); `--dry-run` checkbox; `--skip-editable` checkbox; `--ignore-vuln` multi text; `--disable-pip` checkbox; `--no-deps` checkbox; `--timeout` spinbox |
+| `version` | Version | `READ_ONLY` | — |
 
 **Custom middle panel:** `AuditResultPanel` — parses JSON output from `--output json` and renders a sortable table of
 CVEs with severity, package, affected version, and fix version columns. Falls back to raw text if JSON parsing fails.
 
 Auto-run on select: `version`. `audit` itself is not auto-run (may be slow and makes network calls).
 
----
+______________________________________________________________________
 
 ### `hatch`
 
@@ -199,19 +199,19 @@ be meaningful.
 
 **Groups:** Environment, Build, Publish, Project, Run
 
-| Command        | Label        | Safety         | Key Args                                                                              |
+| Command | Label | Safety | Key Args |
 |----------------|--------------|----------------|---------------------------------------------------------------------------------------|
-| `env_show`     | Show Envs    | `READ_ONLY`    | `--json` checkbox                                                                     |
-| `env_create`   | Create Env   | `MODIFIES_ENV` | env name text (default: default)                                                      |
-| `env_remove`   | Remove Env   | `DESTRUCTIVE`  | env name text                                                                         |
-| `env_prune`    | Prune Envs   | `DESTRUCTIVE`  | —                                                                                     |
-| `build`        | Build        | `MODIFIES_ENV` | target dropdown (wheel/sdist/app); `--clean` checkbox; `--clean-hooks-after` checkbox |
-| `publish`      | Publish      | `MODIFIES_ENV` | target dropdown (pypi/test); `--user` text; `--auth` secret text; `--repo` text       |
-| `version_show` | Show Version | `READ_ONLY`    | —                                                                                     |
-| `version_set`  | Set Version  | `MODIFIES_ENV` | version text (required)                                                               |
-| `run`          | Run Script   | `MODIFIES_ENV` | env text; command text (required)                                                     |
-| `fmt`          | Format       | `MODIFIES_ENV` | `--check` checkbox                                                                    |
-| `lint`         | Lint         | `READ_ONLY`    | —                                                                                     |
+| `env_show` | Show Envs | `READ_ONLY` | `--json` checkbox |
+| `env_create` | Create Env | `MODIFIES_ENV` | env name text (default: default) |
+| `env_remove` | Remove Env | `DESTRUCTIVE` | env name text |
+| `env_prune` | Prune Envs | `DESTRUCTIVE` | — |
+| `build` | Build | `MODIFIES_ENV` | target dropdown (wheel/sdist/app); `--clean` checkbox; `--clean-hooks-after` checkbox |
+| `publish` | Publish | `MODIFIES_ENV` | target dropdown (pypi/test); `--user` text; `--auth` secret text; `--repo` text |
+| `version_show` | Show Version | `READ_ONLY` | — |
+| `version_set` | Set Version | `MODIFIES_ENV` | version text (required) |
+| `run` | Run Script | `MODIFIES_ENV` | env text; command text (required) |
+| `fmt` | Format | `MODIFIES_ENV` | `--check` checkbox |
+| `lint` | Lint | `READ_ONLY` | — |
 
 **Custom middle panel:** `HatchEnvPanel` — top section shows a live-refreshed table of known environments (name, type,
 path, python version) populated by running `hatch env show --json`. Bottom section is the standard `CommandForm`. The
@@ -221,7 +221,7 @@ env table has a right-click menu: Create, Remove, Shell.
 
 Auto-run on select: `env_show`, `version_show`.
 
----
+______________________________________________________________________
 
 ### `flit`
 
@@ -229,11 +229,11 @@ Flit is simpler than hatch. It requires a `pyproject.toml` (or legacy `flit.ini`
 
 **Groups:** Build, Publish
 
-| Command   | Label         | Safety         | Key Args                                                                                                                       |
+| Command | Label | Safety | Key Args |
 |-----------|---------------|----------------|--------------------------------------------------------------------------------------------------------------------------------|
-| `build`   | Build         | `MODIFIES_ENV` | `--format` dropdown (wheel/sdist)                                                                                              |
-| `publish` | Publish       | `MODIFIES_ENV` | `--repository` text (default: pypi); `--pypirc` file; `--format` dropdown (wheel/sdist); `--env` text (for token from env var) |
-| `install` | Install (dev) | `MODIFIES_ENV` | `--symlink` checkbox; `--pth-file` checkbox; `--deps` dropdown (all/develop/production/none)                                   |
+| `build` | Build | `MODIFIES_ENV` | `--format` dropdown (wheel/sdist) |
+| `publish` | Publish | `MODIFIES_ENV` | `--repository` text (default: pypi); `--pypirc` file; `--format` dropdown (wheel/sdist); `--env` text (for token from env var) |
+| `install` | Install (dev) | `MODIFIES_ENV` | `--symlink` checkbox; `--pth-file` checkbox; `--deps` dropdown (all/develop/production/none) |
 
 **No custom panel** — `CommandForm` is sufficient given flit's small command surface.
 
@@ -241,7 +241,7 @@ Auto-run on select: none.
 
 The help panel shows a link to flit's docs and a detected project name/version from `pyproject.toml` when available.
 
----
+______________________________________________________________________
 
 ### `pipx`
 
@@ -251,19 +251,19 @@ pipx manages applications in isolated environments. It manages its own internal 
 
 **Groups:** Apps, Environments
 
-| Command         | Label            | Safety         | Key Args                                                                                                                        |
+| Command | Label | Safety | Key Args |
 |-----------------|------------------|----------------|---------------------------------------------------------------------------------------------------------------------------------|
-| `install`       | Install App      | `MODIFIES_ENV` | package (text, required); `--python` text; `--index-url` text; `--pip-args` text; `--force` checkbox; `--include-deps` checkbox |
-| `uninstall`     | Uninstall App    | `DESTRUCTIVE`  | package (text, required)                                                                                                        |
-| `uninstall_all` | Uninstall All    | `DESTRUCTIVE`  | —                                                                                                                               |
-| `upgrade`       | Upgrade App      | `MODIFIES_ENV` | package (text, required); `--pip-args` text                                                                                     |
-| `upgrade_all`   | Upgrade All      | `MODIFIES_ENV` | `--skip` multi text; `--include-injected` checkbox                                                                              |
-| `inject`        | Inject           | `MODIFIES_ENV` | app (text, required); packages (multi, required); `--include-apps` checkbox; `--include-deps` checkbox                          |
-| `list`          | List Apps        | `READ_ONLY`    | `--json` checkbox; `--short` checkbox; `--include-injected` checkbox                                                            |
-| `run`           | Run (ephemeral)  | `MODIFIES_ENV` | package (text, required); args (multi); `--python` text; `--index-url` text                                                     |
-| `runpip`        | Run pip in App   | `MODIFIES_ENV` | app (text, required); pip args (multi, required)                                                                                |
-| `ensurepath`    | Ensure PATH      | `MODIFIES_ENV` | —                                                                                                                               |
-| `environment`   | Show Environment | `READ_ONLY`    | `--json` checkbox                                                                                                               |
+| `install` | Install App | `MODIFIES_ENV` | package (text, required); `--python` text; `--index-url` text; `--pip-args` text; `--force` checkbox; `--include-deps` checkbox |
+| `uninstall` | Uninstall App | `DESTRUCTIVE` | package (text, required) |
+| `uninstall_all` | Uninstall All | `DESTRUCTIVE` | — |
+| `upgrade` | Upgrade App | `MODIFIES_ENV` | package (text, required); `--pip-args` text |
+| `upgrade_all` | Upgrade All | `MODIFIES_ENV` | `--skip` multi text; `--include-injected` checkbox |
+| `inject` | Inject | `MODIFIES_ENV` | app (text, required); packages (multi, required); `--include-apps` checkbox; `--include-deps` checkbox |
+| `list` | List Apps | `READ_ONLY` | `--json` checkbox; `--short` checkbox; `--include-injected` checkbox |
+| `run` | Run (ephemeral) | `MODIFIES_ENV` | package (text, required); args (multi); `--python` text; `--index-url` text |
+| `runpip` | Run pip in App | `MODIFIES_ENV` | app (text, required); pip args (multi, required) |
+| `ensurepath` | Ensure PATH | `MODIFIES_ENV` | — |
+| `environment` | Show Environment | `READ_ONLY` | `--json` checkbox |
 
 **Custom middle panel:** `PipxAppsPanel` — top section shows a live-refreshed table of installed pipx apps (app name,
 version, python, path) populated by `pipx list --json`. Selecting a row pre-fills the app name field in the command form
@@ -271,7 +271,7 @@ below. Right-click menu: Upgrade, Uninstall, Open install path.
 
 Auto-run on select: `list`, `environment`.
 
----
+______________________________________________________________________
 
 ## Middle Panel Swap Protocol
 
@@ -279,13 +279,13 @@ The existing `build_main_panels()` in `main_window.py` creates `command_form` an
 `PanedWindow`. The swap protocol is:
 
 1. `tool_plugin.panel_class` is `None` → use existing `CommandForm` unchanged.
-2. `tool_plugin.panel_class` is a class → instantiate it in place of `CommandForm`. The class must implement the same
+1. `tool_plugin.panel_class` is a class → instantiate it in place of `CommandForm`. The class must implement the same
    interface: `set_command(spec)`, `get_argv()`, `do_run()`, `update_preview()`. Custom panels embed a `CommandForm`
    internally for the argument fields; the custom part sits above it (e.g. the env table in `HatchEnvPanel`).
-3. On tool switch, the old panel is destroyed and the new one is packed in its place. `output_panel` is always preserved
+1. On tool switch, the old panel is destroyed and the new one is packed in its place. `output_panel` is always preserved
    across switches.
 
----
+______________________________________________________________________
 
 ## Menu Changes
 
@@ -303,7 +303,7 @@ hint).
 The "pip Documentation" item becomes dynamic: it resolves to the active tool's `help_url`. "pip Release Notes" is shown
 only when pip is the active tool.
 
----
+______________________________________________________________________
 
 ## Settings Persistence
 
@@ -312,7 +312,7 @@ only when pip is the active tool.
 - `"active_tool"`: str — last active tool name, default `"pip"`.
 - `"tool_options"`: dict[str, dict] — per-tool equivalent of `global_options`, keyed by tool name.
 
----
+______________________________________________________________________
 
 ## Detection Logic
 
@@ -321,7 +321,7 @@ Detection runs at two moments: application startup, and whenever the interpreter
 **Two-tier detection:**
 
 1. **Global path** — `shutil.which(executable)` against the ambient `$PATH`. If found, the tool tab is active even without a selected interpreter. This covers hatch, flit, twine, pipx installed into the user's system or a global venv.
-2. **Interpreter-local** — for `python -m` tools (build, pip-audit, virtualenv), run a fast import probe: `python -c "import build; print('ok')"` via the selected interpreter. If the selected interpreter changes, probes re-run.
+1. **Interpreter-local** — for `python -m` tools (build, pip-audit, virtualenv), run a fast import probe: `python -c "import build; print('ok')"` via the selected interpreter. If the selected interpreter changes, probes re-run.
 
 A tool is considered available if *either* tier succeeds. Tab state is updated immediately when detection completes (async, non-blocking — runs in a thread; tabs update via `after()` callback).
 
@@ -340,7 +340,7 @@ For `python -m` tools installed globally (e.g. `pip install build` without a ven
 
 `ToolPlugin` gains a `run_via: Literal["python_module", "global_cli"]` field and, for module-based tools, a `module: str` field (e.g. `"build"`, `"pip_audit"`).
 
----
+______________________________________________________________________
 
 ## File Layout
 
@@ -366,7 +366,7 @@ pip_ui/
 
 `command_specs.py` is kept as-is for backwards compatibility; `pip_tool.py` imports from it.
 
----
+______________________________________________________________________
 
 ## What Is Not Changing
 
@@ -376,7 +376,7 @@ pip_ui/
 - Zero new mandatory dependencies. The base install stays stdlib-only.
 - No pip internals are used by any of the new tools either.
 
----
+______________________________________________________________________
 
 ## Resolved Design Decisions
 

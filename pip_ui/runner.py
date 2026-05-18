@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess  # nosec B404
@@ -37,8 +38,6 @@ class PipRunner:
             return [python_path, "-m", module]
 
         # global_cli: prefer the executable next to the interpreter
-        import os
-
         interp_dir = os.path.dirname(python_path)
         candidates = [
             os.path.join(interp_dir, plugin.executable),

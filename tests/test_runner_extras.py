@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shutil
+from pathlib import Path
 
 import pytest
 
@@ -58,7 +59,7 @@ def test_build_prefix_global_cli_falls_back_to_which(monkeypatch: pytest.MonkeyP
     assert "/usr/local/bin/twine" in prefix
 
 
-def test_build_prefix_global_cli_uses_interpreter_local_first(tmp_path) -> None:
+def test_build_prefix_global_cli_uses_interpreter_local_first(tmp_path: Path) -> None:
     runner = PipRunner()
     plugin = get_plugin("hatch")
     assert plugin is not None

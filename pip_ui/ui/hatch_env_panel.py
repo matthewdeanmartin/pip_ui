@@ -1,17 +1,21 @@
 """HatchEnvPanel — live env table + CommandForm for hatch."""
 
+# pylint: disable=consider-using-with
+
 from __future__ import annotations
 
 import contextlib
 import json
 import queue
 import subprocess  # nosec B404
+import sys
 import threading
 import tkinter as tk
 from tkinter import ttk
 from typing import Any, ClassVar
 
 from pip_ui.encoding import utf8_subprocess_kwargs
+from pip_ui.process_utils import resolve_executable, resolve_windows_shell
 from pip_ui.ui.command_form import CommandForm
 
 
@@ -150,15 +154,21 @@ class HatchEnvPanel(ttk.Frame):
 
     def refresh_envs(self) -> None:
         """Run hatch env show --json in a background thread."""
+        hatch_exe = resolve_executable("hatch")
+        if hatch_exe is None:
+            self._refresh_queue.put([])
+            return
 
         def worker() -> None:
             try:
                 result = subprocess.run(  # nosec B603
-                    ["hatch", "env", "show", "--json"],
+                    [hatch_exe, "env", "show", "--json"],
                     capture_output=True,
                     cwd=self._workdir,
                     timeout=15,
                     **utf8_subprocess_kwargs(),
+                    check=False,
+                    shell=False,
                 )
                 data = json.loads(result.stdout or "{}")
                 rows: list[dict[str, str]] = []
@@ -235,23 +245,29 @@ class HatchEnvPanel(ttk.Frame):
         if not sel:
             return
         env_name = sel[0]
-        import shutil
-        import sys
-
-        if shutil.which("hatch"):
+        hatch_exe = resolve_executable("hatch")
+        if hatch_exe:
             try:
                 if sys.platform == "win32":
+                    shell_exe = resolve_windows_shell()
+                    if shell_exe is None:
+                        return
                     subprocess.Popen(  # nosec B603
-                        ["cmd", "/K", "hatch", "shell", env_name],
+                        [shell_exe, "/K", hatch_exe, "shell", env_name],
                         cwd=self._workdir,
                         creationflags=subprocess.CREATE_NEW_CONSOLE,
                         shell=False,
-                    )
+                    )  # nosec B607
                 else:
                     for term in ("x-terminal-emulator", "gnome-terminal", "xterm"):
-                        if shutil.which(term):
+                        terminal_exe = resolve_executable(term)
+                        if terminal_exe:
                             subprocess.Popen(  # nosec B603
-                                [term, "-e", f"hatch shell {env_name}"],
+                                (
+                                    [terminal_exe, "--", hatch_exe, "shell", env_name]
+                                    if term == "gnome-terminal"
+                                    else [terminal_exe, "-e", hatch_exe, "shell", env_name]
+                                ),
                                 cwd=self._workdir,
                                 shell=False,
                             )

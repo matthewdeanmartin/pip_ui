@@ -79,7 +79,7 @@ def test_set_updates_cache_and_persists(monkeypatch: pytest.MonkeyPatch, tmp_pat
 def test_get_tool_options_returns_empty_dict_by_default(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     patch_home(monkeypatch, tmp_path)
     settings = AppSettings()
-    assert settings.get_tool_options("hatch") == {}
+    assert not settings.get_tool_options("hatch")
 
 
 def test_set_tool_options_roundtrip(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

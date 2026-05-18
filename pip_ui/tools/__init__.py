@@ -1,8 +1,11 @@
+# pylint: disable=import-outside-toplevel
+
 """Tool plugin registry for pip-ui extras."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Literal
 
 from pip_ui.models import CommandSpec
@@ -51,14 +54,9 @@ def _build_registry() -> list[ToolPlugin]:
     ]
 
 
-_registry: list[ToolPlugin] | None = None
-
-
-def get_registry() -> list[ToolPlugin]:
-    global _registry
-    if _registry is None:
-        _registry = _build_registry()
-    return _registry
+@lru_cache(maxsize=1)
+def get_registry() -> tuple[ToolPlugin, ...]:
+    return tuple(_build_registry())
 
 
 def get_plugin(name: str) -> ToolPlugin | None:

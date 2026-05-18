@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -60,7 +61,7 @@ def test_probe_module_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
 # ---- _which_in_interpreter --------------------------------------------------
 
 
-def test_which_in_interpreter_found(tmp_path) -> None:
+def test_which_in_interpreter_found(tmp_path: Path) -> None:
     scripts_dir = tmp_path / "Scripts"
     scripts_dir.mkdir()
     exe = scripts_dir / "twine.exe"
@@ -76,7 +77,7 @@ def test_which_in_interpreter_found(tmp_path) -> None:
     assert result is None or isinstance(result, str)
 
 
-def test_which_in_interpreter_missing(tmp_path) -> None:
+def test_which_in_interpreter_missing(tmp_path: Path) -> None:
     fake_interp = tmp_path / "bin" / "python"
     result = _which_in_interpreter(_make_interpreter(str(fake_interp)), "twine")
     assert result is None

@@ -1,5 +1,7 @@
 """VirtualenvPanel — CommandForm wrapper with 'Activate in new terminal' button."""
 
+# pylint: disable=consider-using-with
+
 from __future__ import annotations
 
 import os
@@ -9,6 +11,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Any
 
+from pip_ui.process_utils import resolve_executable, resolve_windows_shell
 from pip_ui.ui.command_form import CommandForm
 
 
@@ -154,31 +157,35 @@ class VirtualenvPanel(ttk.Frame):
         abs_path = os.path.abspath(path)
         try:
             if sys.platform == "win32":
+                shell_exe = resolve_windows_shell()
+                if shell_exe is None:
+                    return
                 activate = os.path.join(abs_path, "Scripts", "activate.bat")
                 subprocess.Popen(  # nosec B603
-                    ["cmd", "/K", activate],
+                    [shell_exe, "/K", activate],
                     creationflags=subprocess.CREATE_NEW_CONSOLE,
                     shell=False,
-                )
+                )  # nosec B607
             else:
                 activate = os.path.join(abs_path, "bin", "activate")
-                init_file = f"--init-file {activate}"
+                bash_exe = resolve_executable("bash")
+                if bash_exe is None:
+                    return
                 for terminal in ("x-terminal-emulator", "gnome-terminal", "xterm"):
-                    import shutil
-
-                    if shutil.which(terminal):
+                    terminal_exe = resolve_executable(terminal)
+                    if terminal_exe:
                         if terminal == "gnome-terminal":
                             subprocess.Popen(  # nosec B603
-                                [terminal, "--", "bash", "--init-file", activate],
+                                [terminal_exe, "--", bash_exe, "--init-file", activate],
                                 shell=False,
                             )
                         else:
                             subprocess.Popen(  # nosec B603
-                                [terminal, "-e", f"bash {init_file}"],
+                                [terminal_exe, "-e", bash_exe, "--init-file", activate],
                                 shell=False,
                             )
                         return
                 # Last resort
-                subprocess.Popen(["bash", "--init-file", activate], shell=False)  # nosec B603
+                subprocess.Popen([bash_exe, "--init-file", activate], shell=False)  # nosec B603
         except OSError:
             pass

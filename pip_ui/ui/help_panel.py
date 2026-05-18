@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess  # nosec B404
 import threading
 import tkinter as tk
@@ -283,8 +284,6 @@ class HelpPanel(ttk.Frame):
             argv = [interpreter_info.path, "-m", self._help_module, sub, "--help"]
         else:
             # global_cli: e.g. hatch env --help, pipx install --help
-            import shutil
-
             exe = shutil.which(self._help_executable) or self._help_executable
             # Strip tool-name prefix from spec.name (e.g. "hatch_env_show" → ["env", "show"])
             parts = spec.name.split("_")

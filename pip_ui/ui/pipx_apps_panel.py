@@ -1,5 +1,7 @@
 """PipxAppsPanel — live table of installed pipx apps + CommandForm."""
 
+# pylint: disable=consider-using-with
+
 from __future__ import annotations
 
 import contextlib
@@ -7,12 +9,14 @@ import json
 import os
 import queue
 import subprocess  # nosec B404
+import sys
 import threading
 import tkinter as tk
 from tkinter import ttk
 from typing import Any, ClassVar
 
 from pip_ui.encoding import utf8_subprocess_kwargs
+from pip_ui.process_utils import resolve_executable
 from pip_ui.ui.command_form import CommandForm
 
 _REFRESH_TRIGGERS = {"pipx_install", "pipx_uninstall", "pipx_upgrade", "pipx_upgrade_all"}
@@ -154,14 +158,20 @@ class PipxAppsPanel(ttk.Frame):
 
     def refresh_apps(self) -> None:
         """Run pipx list --json in a background thread."""
+        pipx_exe = resolve_executable("pipx")
+        if pipx_exe is None:
+            self._refresh_queue.put([])
+            return
 
         def worker() -> None:
             try:
                 result = subprocess.run(  # nosec B603
-                    ["pipx", "list", "--json"],
+                    [pipx_exe, "list", "--json"],
                     capture_output=True,
                     timeout=20,
                     **utf8_subprocess_kwargs(),
+                    check=False,
+                    shell=False,
                 )
                 data = json.loads(result.stdout or "{}")
                 rows: list[dict[str, str]] = []
@@ -246,18 +256,22 @@ class PipxAppsPanel(ttk.Frame):
         try:
             values = self._tree.item(app, "values")
             path = values[3] if len(values) > 3 else ""
-        except Exception:
+        except (tk.TclError, IndexError):
             path = ""
         if not path:
             return
         try:
-            import sys
-
             if sys.platform == "win32":
-                os.startfile(path)  # type: ignore[attr-defined,unused-ignore]
+                os.startfile(path)  # type: ignore[attr-defined,unused-ignore]  # nosec B606
             elif sys.platform == "darwin":
-                subprocess.Popen(["open", path], shell=False)  # nosec B603
+                open_exe = resolve_executable("open")
+                if open_exe is None:
+                    return
+                subprocess.Popen([open_exe, path], shell=False)  # nosec B603
             else:
-                subprocess.Popen(["xdg-open", path], shell=False)  # nosec B603
+                open_exe = resolve_executable("xdg-open")
+                if open_exe is None:
+                    return
+                subprocess.Popen([open_exe, path], shell=False)  # nosec B603
         except OSError:
             pass

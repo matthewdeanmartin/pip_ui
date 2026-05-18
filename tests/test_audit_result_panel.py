@@ -1,5 +1,7 @@
 """Unit tests for AuditResultPanel.load_json."""
 
+# pylint: disable=import-outside-toplevel
+
 from __future__ import annotations
 
 import json

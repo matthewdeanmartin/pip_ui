@@ -7,7 +7,7 @@ from collections.abc import Callable
 from tkinter import ttk
 from typing import Any
 
-from pip_ui.tools import ToolPlugin, get_registry
+from pip_ui.tools import ToolPlugin, get_plugin, get_registry
 from pip_ui.ui.dialogs import info_dialog
 
 
@@ -37,7 +37,7 @@ class ToolSwitcher(ttk.Frame):
             btn = ttk.Button(
                 self,
                 text=plugin.label,
-                command=lambda p=plugin: self._on_click(p),
+                command=self._make_click_handler(plugin),
                 width=len(plugin.label) + 2,
             )
             btn.pack(side=tk.LEFT, padx=1, pady=1)
@@ -45,6 +45,12 @@ class ToolSwitcher(ttk.Frame):
             # Start all non-pip tools as unavailable until detection completes.
             self._available[plugin.name] = plugin.name == "pip"
         self._refresh_states()
+
+    def _make_click_handler(self, plugin: ToolPlugin) -> Callable[[], None]:
+        def on_click() -> None:
+            self._on_click(plugin)
+
+        return on_click
 
     def _on_click(self, plugin: ToolPlugin) -> None:
         if not self._available.get(plugin.name, False):
@@ -68,8 +74,6 @@ class ToolSwitcher(ttk.Frame):
 
     def select(self, plugin_name: str) -> None:
         """Programmatically select a tool tab (restores from settings on startup)."""
-        from pip_ui.tools import get_plugin
-
         plugin = get_plugin(plugin_name)
         if plugin is not None and self._available.get(plugin_name, False):
             self._active_name = plugin_name

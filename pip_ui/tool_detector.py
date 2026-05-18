@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import shutil
-import subprocess
+import subprocess  # nosec B404
 import threading
 from collections.abc import Callable
 
@@ -34,7 +34,9 @@ def _probe_module(interpreter_path: str, module_name: str) -> bool:
             [interpreter_path, "-c", f"import {module_name}"],
             capture_output=True,
             timeout=5,
-        )
+            check=False,
+            shell=False,
+        )  # nosec B603
         return result.returncode == 0
     except (OSError, subprocess.TimeoutExpired):
         return False

@@ -43,6 +43,7 @@ class AuditResultPanel(ttk.Frame):
         self._sort_col: str = "severity"
         self._sort_reverse: bool = False
         self._rows: list[dict[str, str]] = []
+        self._desc_map: dict[str, str] = {}
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -96,8 +97,6 @@ class AuditResultPanel(ttk.Frame):
         )
         self._desc_text.pack(fill=tk.X, expand=True)
         desc_scroll.config(command=self._desc_text.yview)
-
-        self._desc_map: dict[str, str] = {}
 
     # ---- public API ---------------------------------------------------------
 

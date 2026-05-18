@@ -1,5 +1,7 @@
 """Main application window."""
 
+# pylint: disable=too-many-lines
+
 from __future__ import annotations
 
 import contextlib
@@ -11,6 +13,8 @@ import webbrowser
 from datetime import datetime
 from tkinter import filedialog, ttk
 from typing import Any
+
+import tomllib
 
 from pip_ui.__about__ import __version__
 from pip_ui.history import CommandHistory
@@ -28,6 +32,7 @@ from pip_ui.self_update import UpgradeInfo, check_latest_version
 from pip_ui.settings import AppSettings
 from pip_ui.tool_detector import detect_all_tools
 from pip_ui.tools import ToolPlugin, get_plugin
+from pip_ui.ui.audit_result_panel import AuditResultPanel
 from pip_ui.ui.cert_tester import CertTesterDialog
 from pip_ui.ui.command_form import CommandForm, default_global_values
 from pip_ui.ui.command_tree import CommandTree
@@ -51,7 +56,9 @@ class MainWindow(tk.Tk):
         self.safe_mode = safe_mode
         self.settings = AppSettings()
         self.settings.load()
-        self.active_plugin: ToolPlugin = get_plugin("pip")  # type: ignore[assignment]
+        default_plugin = get_plugin("pip")
+        assert default_plugin is not None
+        self.active_plugin: ToolPlugin = default_plugin
         self.history = CommandHistory() if not no_history else None
         self.runner = PipRunner()
         self.output_queue: queue.Queue[tuple[str, str]] = queue.Queue()
@@ -111,6 +118,15 @@ class MainWindow(tk.Tk):
 
         self.global_requirements_file: str | None = None
         self.active_index_url: str | None = None
+        self._active_help_url = "https://pip.pypa.io/en/stable/"
+        self._pipx_picker_row: ttk.Frame | None = None
+        self._pipx_picker: PipxPythonPicker | None = None
+        self._pipx_python_path: str | None = None
+        self.interpreter_row: ttk.Frame
+        self.toolbar2: ttk.Frame
+        self.dir_label: ttk.Label
+        self.workdir_var: tk.StringVar
+        self.requirements_picker: RequirementsPicker
 
         self.show_secrets = tk.BooleanVar(value=bool(self.settings.get("show_secrets", False)))
         self.status_interpreter_var = tk.StringVar(value="No interpreter selected")
@@ -196,7 +212,7 @@ class MainWindow(tk.Tk):
         detect_all_tools(self.current_interpreter, on_result=on_result)
 
     def _show_pipx_picker(self) -> None:
-        if not hasattr(self, "_pipx_picker_row"):
+        if self._pipx_picker_row is None:
             self._pipx_picker_row = ttk.Frame(self, relief=tk.GROOVE, borderwidth=1)
             self._pipx_picker = PipxPythonPicker(
                 self._pipx_picker_row,
@@ -206,7 +222,7 @@ class MainWindow(tk.Tk):
         self._pipx_picker_row.pack(side=tk.TOP, fill=tk.X, padx=2, pady=(0, 2), before=self.toolbar2)
 
     def _hide_pipx_picker(self) -> None:
-        if hasattr(self, "_pipx_picker_row"):
+        if self._pipx_picker_row is not None:
             self._pipx_picker_row.pack_forget()
 
     def _on_pipx_python_change(self, python_path: str | None) -> None:
@@ -221,22 +237,18 @@ class MainWindow(tk.Tk):
         if not os.path.isfile(pyproject):
             return ""
         try:
-            import tomllib
-        except ImportError:
-            try:
-                import tomli as tomllib
-            except ImportError:
-                return ""
-        try:
             with open(pyproject, "rb") as fh:
                 data = tomllib.load(fh)
-            name = data.get("project", {}).get("name", "")
-            version = data.get("project", {}).get("version", "")
+            project = data.get("project", {})
+            if not isinstance(project, dict):
+                return ""
+            name = str(project.get("name", ""))
+            version = str(project.get("version", ""))
             if name:
                 label = plugin.label
                 return f"{label} project: {name} {version}".strip()
-        except Exception:
-            pass
+        except (OSError, tomllib.TOMLDecodeError):
+            return ""
         return ""
 
     # ------------------------------------------------------------------ menu
@@ -284,8 +296,6 @@ class MainWindow(tk.Tk):
     # --------------------------------------------------------------- toolbar
 
     def build_toolbar(self) -> None:
-        self._active_help_url = "https://pip.pypa.io/en/stable/"
-
         self.interpreter_row = ttk.Frame(self, relief=tk.GROOVE, borderwidth=1)
         self.interpreter_row.pack(side=tk.TOP, fill=tk.X, padx=2, pady=2)
 
@@ -386,13 +396,13 @@ class MainWindow(tk.Tk):
             self.command_form = None
 
         panel_class = plugin.panel_class
-        form_kwargs: dict[str, Any] = dict(
-            on_run=self.run_command,
-            on_form_change=self.on_form_change,
-            global_values_provider=lambda: dict(self.global_options),
-            on_open_global_options=self.open_global_options_dialog,
-            global_requirements_provider=lambda: self.global_requirements_file,
-        )
+        form_kwargs: dict[str, Any] = {
+            "on_run": self.run_command,
+            "on_form_change": self.on_form_change,
+            "global_values_provider": lambda: dict(self.global_options),
+            "on_open_global_options": self.open_global_options_dialog,
+            "global_requirements_provider": lambda: self.global_requirements_file,
+        }
 
         if panel_class is None:
             new_panel: Any = CommandForm(self.middle_paned, **form_kwargs)
@@ -913,11 +923,6 @@ class MainWindow(tk.Tk):
 
     def _try_show_audit_result(self) -> None:
         """Parse pip-audit JSON from the output panel and show AuditResultPanel in a dialog."""
-        try:
-            from pip_ui.ui.audit_result_panel import AuditResultPanel
-        except ImportError:
-            return
-
         raw = self.output_panel.get_stdout_text()
         if not raw:
             return

@@ -1,5 +1,7 @@
 """Smoke tests for custom panel widget construction (no display needed)."""
 
+# pylint: disable=import-outside-toplevel
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -20,13 +22,13 @@ def root():
 
 
 def _form_kwargs(root):
-    return dict(
-        on_run=MagicMock(),
-        on_form_change=MagicMock(),
-        global_values_provider=lambda: {},
-        on_open_global_options=MagicMock(),
-        global_requirements_provider=lambda: None,
-    )
+    return {
+        "on_run": MagicMock(),
+        "on_form_change": MagicMock(),
+        "global_values_provider": lambda: {},
+        "on_open_global_options": MagicMock(),
+        "global_requirements_provider": lambda: None,
+    }
 
 
 # ---- VirtualenvPanel --------------------------------------------------------

@@ -4,7 +4,7 @@ Cross-reference: `spec/spec_extras.md`
 
 This document lists every discrete piece of work needed to implement the extras spec, grouped by layer. Items within a section can largely be done in parallel; sections have ordering dependencies as noted.
 
----
+______________________________________________________________________
 
 ## 0. Pre-work (do first)
 
@@ -12,7 +12,7 @@ This document lists every discrete piece of work needed to implement the extras 
 - [ ] Add `spec/` to `.gitignore` exclusions if docs are excluded, or confirm spec files are committed.
 - [ ] Verify `pyproject.toml` extras syntax with a dry `hatch build` (no new deps yet, just the `[project.optional-dependencies]` table structure).
 
----
+______________________________________________________________________
 
 ## 1. `pyproject.toml` extras ✅
 
@@ -30,7 +30,7 @@ This document lists every discrete piece of work needed to implement the extras 
   ```
 - [ ] Update `README.md` install section to document extras.
 
----
+______________________________________________________________________
 
 ## 2. Core data model (`pip_ui/tools/`) ✅
 
@@ -44,14 +44,14 @@ This document lists every discrete piece of work needed to implement the extras 
 - [x] Create `pip_ui/tools/flit_tool.py`
 - [x] Create `pip_ui/tools/pipx_tool.py`
 
----
+______________________________________________________________________
 
 ## 3. Detection logic (`pip_ui/tool_detector.py`) ✅
 
 - [x] `_probe_module`, `_which_in_interpreter`, `is_available`, `detect_all_tools` (background thread + callback)
 - [ ] Write unit tests (mock `subprocess.run` and `shutil.which`)
 
----
+______________________________________________________________________
 
 ## 4. Runner generalisation (`pip_ui/runner.py`) ✅
 
@@ -60,13 +60,13 @@ This document lists every discrete piece of work needed to implement the extras 
 - [x] `redact_argv` extended with `secret_flags` parameter
 - [x] `main_window.py` updated to pass active plugin and secret_flags
 
----
+______________________________________________________________________
 
 ## 5. `models.py` changes ✅
 
 - [x] `"secret"` documented in `ArgSpec.field_type` comment
 
----
+______________________________________________________________________
 
 ## 6. `CommandForm` changes ✅
 
@@ -74,7 +74,7 @@ This document lists every discrete piece of work needed to implement the extras 
 - [x] `set_show_secret(reveal)` on `FieldWidget`; `apply_show_secrets(reveal)` on `CommandForm`
 - [x] `on_show_secrets_toggle` in `MainWindow` propagates to form
 
----
+______________________________________________________________________
 
 ## 7. Tool switcher widget ✅
 
@@ -82,7 +82,7 @@ This document lists every discrete piece of work needed to implement the extras 
 - [x] Clicking unavailable tab shows install-hint dialog
 - [x] `set_available`, `select`, `configure_styles`
 
----
+______________________________________________________________________
 
 ## 8. `MainWindow` integration (`pip_ui/ui/main_window.py`) ✅ (core done)
 
@@ -98,7 +98,7 @@ This document lists every discrete piece of work needed to implement the extras 
 - [ ] `swap_middle_panel` for custom panel classes (needed for sections 9a–9d)
 - [ ] About dialog tool mention
 
----
+______________________________________________________________________
 
 ## 9. Custom panels
 
@@ -136,7 +136,7 @@ Each can be developed and tested independently once `CommandForm` and `ToolPlugi
 - [ ] Right-click: Upgrade, Uninstall (with confirm), Open install path in file manager.
 - [ ] Row click pre-fills the app/package name field in the `CommandForm` below.
 
----
+______________________________________________________________________
 
 ## 10. pipx Python picker (`pip_ui/ui/pipx_python_picker.py`)
 
@@ -147,7 +147,7 @@ Each can be developed and tested independently once `CommandForm` and `ToolPlugi
 - [ ] Shown in place of the interpreter picker row when pipx is the active tool.
 - [ ] Selected python path is passed as `--python {path}` to any pipx command whose spec includes a `python` arg.
 
----
+______________________________________________________________________
 
 ## 11. Help panel updates (`pip_ui/ui/help_panel.py`)
 
@@ -155,14 +155,14 @@ Each can be developed and tested independently once `CommandForm` and `ToolPlugi
 - [ ] Add `set_base_url(url)` so the panel fetches docs from the active tool's `help_url` instead of pip's.
 - [ ] For project-scoped tools (hatch, flit), detect `pyproject.toml` in the working directory and show project name + version as a status line at the top of the help panel.
 
----
+______________________________________________________________________
 
 ## 12. Settings updates (`pip_ui/settings.py`)
 
 - [ ] Document (and handle migration for) two new keys: `"active_tool"` (str), `"tool_options"` (dict).
 - [ ] `get_tool_options(tool_name) -> dict` and `set_tool_options(tool_name, opts)` convenience methods.
 
----
+______________________________________________________________________
 
 ## 13. Tests
 
@@ -173,7 +173,7 @@ Each can be developed and tested independently once `CommandForm` and `ToolPlugi
 - [ ] Smoke tests (no-display) for `VirtualenvPanel`, `HatchEnvPanel`, `PipxAppsPanel` widget construction.
 - [ ] Integration test: `MainWindow` with each extra installed, tab switch round-trips, tool is correctly detected.
 
----
+______________________________________________________________________
 
 ## 14. Docs / README
 
@@ -181,7 +181,7 @@ Each can be developed and tested independently once `CommandForm` and `ToolPlugi
 - [ ] Update `CHANGELOG.md` with the 0.3.0 entry once shipped.
 - [ ] `mkdocs` pages: one page per tool with command reference.
 
----
+______________________________________________________________________
 
 ## Dependency order summary
 
