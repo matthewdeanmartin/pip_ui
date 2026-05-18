@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pip_ui.models import ArgSpec, CommandSpec, SafetyLevel
 from pip_ui.tools import ToolPlugin
+from pip_ui.ui.virtualenv_panel import VirtualenvPanel
 
 _GROUPS = ["Create", "Manage"]
 
@@ -112,4 +113,5 @@ VIRTUALENV_PLUGIN = ToolPlugin(
     command_specs=_SPECS,
     command_groups=_GROUPS,
     help_url="https://virtualenv.pypa.io/en/latest/",
+    panel_class=VirtualenvPanel,
 )

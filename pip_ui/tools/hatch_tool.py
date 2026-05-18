@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pip_ui.models import ArgSpec, CommandSpec, SafetyLevel
 from pip_ui.tools import ToolPlugin
+from pip_ui.ui.hatch_env_panel import HatchEnvPanel
 
 _GROUPS = ["Environment", "Build", "Publish", "Project", "Run"]
 
@@ -234,4 +235,5 @@ HATCH_PLUGIN = ToolPlugin(
     help_url="https://hatch.pypa.io/latest/",
     secret_flags=["--auth"],
     is_project_scoped=True,
+    panel_class=HatchEnvPanel,
 )

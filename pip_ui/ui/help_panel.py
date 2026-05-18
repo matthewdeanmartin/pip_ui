@@ -133,6 +133,12 @@ class HelpPanel(ttk.Frame):
         self.spec: CommandSpec | None = None
         self.interpreter_info: InterpreterInfo | None = None
         self.help_cache: dict[tuple[str, str], str] = {}
+        self._base_url: str = "https://pip.pypa.io/en/stable/"
+        self._project_status: str = ""
+        # run_via and executable from the active ToolPlugin, set by set_active_plugin()
+        self._help_run_via: str = "python_module"
+        self._help_module: str = "pip"
+        self._help_executable: str = "pip"
         self.build_ui()
 
     def build_ui(self) -> None:
@@ -163,6 +169,20 @@ class HelpPanel(ttk.Frame):
         widget.insert(tk.END, content)
         widget.configure(state=tk.DISABLED)
 
+    def set_base_url(self, url: str) -> None:
+        """Change the documentation base URL shown in the Command Help tab."""
+        self._base_url = url
+
+    def set_project_status(self, status: str) -> None:
+        """Set a project name/version line shown at the top of the Overview tab."""
+        self._project_status = status
+
+    def set_active_plugin(self, plugin: Any) -> None:
+        """Tell the panel which tool is active so Command Help fetches from the right source."""
+        self._help_run_via = getattr(plugin, "run_via", "python_module")
+        self._help_module = getattr(plugin, "module", "pip")
+        self._help_executable = getattr(plugin, "executable", "pip")
+
     def update_for_command(
         self,
         spec: CommandSpec,
@@ -172,11 +192,16 @@ class HelpPanel(ttk.Frame):
         self.spec = spec
         self.interpreter_info = interpreter_info
 
-        self.set_text(
-            self.overview_text,
-            f"{spec.label}\n\n{spec.description}\n\n"
+        overview_parts = [
+            spec.label,
+            "",
+            spec.description,
+            "",
             f"Safety: {SAFETY_LABELS.get(spec.safety_level, str(spec.safety_level))}",
-        )
+        ]
+        if self._project_status:
+            overview_parts = [self._project_status, "", *overview_parts]
+        self.set_text(self.overview_text, "\n".join(overview_parts))
 
         runner = PipRunner()
         python = interpreter_info.path if interpreter_info else "python"
@@ -230,19 +255,42 @@ class HelpPanel(ttk.Frame):
         self.set_text(self.troubleshooting_text, trouble)
 
     def populate_command_help(self, spec: CommandSpec, interpreter_info: InterpreterInfo | None) -> None:
-        if interpreter_info is None:
-            self.set_text(self.command_help_text, "Select a Python interpreter to load pip's help text.")
+        run_via = self._help_run_via
+
+        # For python_module tools we need an interpreter; for global_cli we do not.
+        if run_via == "python_module" and interpreter_info is None:
+            self.set_text(self.command_help_text, "Select a Python interpreter to load help text.")
             return
 
-        key = (interpreter_info.path, spec.name)
+        cache_ctx = interpreter_info.path if interpreter_info else self._help_executable
+        key = (cache_ctx, spec.name)
         cached = self.help_cache.get(key)
         if cached is not None:
             self.set_text(self.command_help_text, cached)
             return
 
-        self.set_text(self.command_help_text, "Loading pip help...")
+        self.set_text(self.command_help_text, "Loading help...")
 
-        argv = [interpreter_info.path, "-m", "pip", *help_argv_for(spec.name)]
+        # Build the argv for fetching help.
+        # pip uses its own `pip help <sub>` form; other tools use `<cmd> --help`.
+        if run_via == "python_module" and self._help_module == "pip":
+            assert interpreter_info is not None
+            argv = [interpreter_info.path, "-m", "pip", *help_argv_for(spec.name)]
+        elif run_via == "python_module":
+            assert interpreter_info is not None
+            # e.g. python -m build --help  or  python -m pip_audit --help
+            sub = spec.name.split("_")[0] if "_" in spec.name else spec.name
+            argv = [interpreter_info.path, "-m", self._help_module, sub, "--help"]
+        else:
+            # global_cli: e.g. hatch env --help, pipx install --help
+            import shutil
+
+            exe = shutil.which(self._help_executable) or self._help_executable
+            # Strip tool-name prefix from spec.name (e.g. "hatch_env_show" → ["env", "show"])
+            parts = spec.name.split("_")
+            if parts and parts[0] == self._help_executable.replace("-", "_"):
+                parts = parts[1:]
+            argv = [exe, *parts, "--help"]
 
         def worker() -> None:
             try:
@@ -255,9 +303,9 @@ class HelpPanel(ttk.Frame):
                     timeout=15,
                 )  # nosec B603
                 output = (result.stdout or "") + (("\n" + result.stderr) if result.stderr else "")
-                output = output.strip() or "(no output from pip help)"
+                output = output.strip() or "(no output)"
             except (OSError, subprocess.SubprocessError) as exc:
-                output = f"Error fetching pip help: {exc}"
+                output = f"Error fetching help: {exc}"
             self.help_cache[key] = output
             self.after(0, lambda: self.render_command_help(key, output))
 

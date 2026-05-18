@@ -129,6 +129,10 @@ class OutputPanel(ttk.Frame):
             widget.delete("1.0", tk.END)
             widget.configure(state=tk.DISABLED)
 
+    def get_stdout_text(self) -> str:
+        """Return the full text from the stdout tab."""
+        return self.stdout_text.get("1.0", tk.END).rstrip("\n")
+
     def snapshot(self) -> dict[str, str]:
         """Return the current text in every tab so a caller can restore it later."""
         return {

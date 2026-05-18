@@ -38,6 +38,7 @@ from pip_ui.ui.help_panel import HelpPanel
 from pip_ui.ui.index_selector import IndexSelector
 from pip_ui.ui.interpreter_picker import InterpreterPicker
 from pip_ui.ui.output_panel import OutputPanel
+from pip_ui.ui.pipx_python_picker import PipxPythonPicker
 from pip_ui.ui.proxy_dialog import ProxyDialog
 from pip_ui.ui.requirements_picker import RequirementsPicker
 from pip_ui.ui.tool_switcher import ToolSwitcher
@@ -158,21 +159,15 @@ class MainWindow(tk.Tk):
         # Rebuild the command tree for this tool.
         self.command_tree.load_plugin(plugin.command_specs, plugin.command_groups)
 
-        # Clear the form (no command selected yet in the new tree).
-        if self.command_form is not None:
-            for _child in self.command_form.winfo_children():
-                pass  # form rebuilds on next set_command call
-            self.command_form.spec = None
-            self.command_form.title_label.config(text="Select a command")
-            self.command_form.desc_label.config(text="")
-            self.command_form.run_btn.config(state=tk.DISABLED)
-            self.command_form.dry_run_btn.config(state=tk.DISABLED)
-            self.command_form.update_preview()
+        # Swap middle panel to the tool's panel_class (or plain CommandForm).
+        self.swap_middle_panel(plugin)
 
-        # Show/hide interpreter row based on the tool.
+        # Show/hide interpreter row and pipx Python picker.
         if plugin.hide_interpreter_picker:
             self.interpreter_row.pack_forget()
+            self._show_pipx_picker()
         else:
+            self._hide_pipx_picker()
             self.interpreter_row.pack(side=tk.TOP, fill=tk.X, padx=2, pady=(0, 2), before=self.toolbar2)
 
         # Rename Dir label for project-scoped tools.
@@ -185,6 +180,10 @@ class MainWindow(tk.Tk):
         # Update Help menu doc link.
         self._active_help_url = plugin.help_url
         self._update_help_menu()
+        if self.help_panel is not None:
+            self.help_panel.set_base_url(plugin.help_url)
+            self.help_panel.set_project_status(self._detect_project_status(plugin))
+            self.help_panel.set_active_plugin(plugin)
 
         # Clear output cache (different tool = different outputs).
         self.output_cache.clear()
@@ -195,6 +194,50 @@ class MainWindow(tk.Tk):
             self.after(0, lambda: self.tool_switcher.set_available(name, available))
 
         detect_all_tools(self.current_interpreter, on_result=on_result)
+
+    def _show_pipx_picker(self) -> None:
+        if not hasattr(self, "_pipx_picker_row"):
+            self._pipx_picker_row = ttk.Frame(self, relief=tk.GROOVE, borderwidth=1)
+            self._pipx_picker = PipxPythonPicker(
+                self._pipx_picker_row,
+                on_change=self._on_pipx_python_change,
+            )
+            self._pipx_picker.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=4)
+        self._pipx_picker_row.pack(side=tk.TOP, fill=tk.X, padx=2, pady=(0, 2), before=self.toolbar2)
+
+    def _hide_pipx_picker(self) -> None:
+        if hasattr(self, "_pipx_picker_row"):
+            self._pipx_picker_row.pack_forget()
+
+    def _on_pipx_python_change(self, python_path: str | None) -> None:
+        self._pipx_python_path = python_path
+
+    def _detect_project_status(self, plugin: ToolPlugin) -> str:
+        """Return a 'project: name version' string for project-scoped tools, or empty string."""
+        if not plugin.is_project_scoped:
+            return ""
+        workdir = self.workdir_var.get() or os.getcwd()
+        pyproject = os.path.join(workdir, "pyproject.toml")
+        if not os.path.isfile(pyproject):
+            return ""
+        try:
+            import tomllib
+        except ImportError:
+            try:
+                import tomli as tomllib
+            except ImportError:
+                return ""
+        try:
+            with open(pyproject, "rb") as fh:
+                data = tomllib.load(fh)
+            name = data.get("project", {}).get("name", "")
+            version = data.get("project", {}).get("version", "")
+            if name:
+                label = plugin.label
+                return f"{label} project: {name} {version}".strip()
+        except Exception:
+            pass
+        return ""
 
     # ------------------------------------------------------------------ menu
 
@@ -308,21 +351,21 @@ class MainWindow(tk.Tk):
         self.command_tree = CommandTree(self.horizontal_paned, on_select=self.on_command_select)
         self.horizontal_paned.add(self.command_tree, weight=0)
 
-        middle_paned = ttk.PanedWindow(self.horizontal_paned, orient=tk.VERTICAL)
-        self.horizontal_paned.add(middle_paned, weight=2)
+        self.middle_paned = ttk.PanedWindow(self.horizontal_paned, orient=tk.VERTICAL)
+        self.horizontal_paned.add(self.middle_paned, weight=2)
 
         self.command_form = CommandForm(
-            middle_paned,
+            self.middle_paned,
             on_run=self.run_command,
             on_form_change=self.on_form_change,
             global_values_provider=lambda: dict(self.global_options),
             on_open_global_options=self.open_global_options_dialog,
             global_requirements_provider=lambda: self.global_requirements_file,
         )
-        middle_paned.add(self.command_form, weight=1)
+        self.middle_paned.add(self.command_form, weight=1)
 
-        self.output_panel = OutputPanel(middle_paned, on_cancel=self.on_cancel_running)
-        middle_paned.add(self.output_panel, weight=1)
+        self.output_panel = OutputPanel(self.middle_paned, on_cancel=self.on_cancel_running)
+        self.middle_paned.add(self.output_panel, weight=1)
 
         self.help_panel = HelpPanel(self.horizontal_paned)
         self.horizontal_paned.add(self.help_panel, weight=0)
@@ -333,6 +376,40 @@ class MainWindow(tk.Tk):
         self.after(150, self.apply_initial_sash_positions)
 
         self.refresh_global_options_summary()
+
+    def swap_middle_panel(self, plugin: ToolPlugin) -> None:
+        """Replace the command form slot with the plugin's panel_class, or CommandForm."""
+        # Destroy the old panel (not the output_panel).
+        if self.command_form is not None:
+            self.middle_paned.forget(self.command_form)
+            self.command_form.destroy()
+            self.command_form = None
+
+        panel_class = plugin.panel_class
+        form_kwargs: dict[str, Any] = dict(
+            on_run=self.run_command,
+            on_form_change=self.on_form_change,
+            global_values_provider=lambda: dict(self.global_options),
+            on_open_global_options=self.open_global_options_dialog,
+            global_requirements_provider=lambda: self.global_requirements_file,
+        )
+
+        if panel_class is None:
+            new_panel: Any = CommandForm(self.middle_paned, **form_kwargs)
+        else:
+            try:
+                new_panel = panel_class(self.middle_paned, **form_kwargs)
+            except TypeError:
+                # Panel doesn't accept CommandForm kwargs (e.g. AuditResultPanel) — plain form
+                new_panel = CommandForm(self.middle_paned, **form_kwargs)
+
+        # Insert before output_panel (index 0 in the paned window).
+        self.middle_paned.insert(0, new_panel, weight=1)
+        self.command_form = new_panel
+
+        # Pass workdir to panels that support it (e.g. HatchEnvPanel).
+        if hasattr(self.command_form, "set_workdir"):
+            self.command_form.set_workdir(self.workdir_var.get() or os.getcwd())
 
     def maximize_on_startup(self) -> None:
         """Maximize the window on launch, with cross-platform fallbacks."""
@@ -421,6 +498,8 @@ class MainWindow(tk.Tk):
             self.status_workdir_var.set(path)
             self.settings.set("last_working_dir", path)
             self.requirements_picker.set_directory(path)
+            if self.command_form is not None and hasattr(self.command_form, "set_workdir"):
+                self.command_form.set_workdir(path)
 
     def on_command_select(self, command_name: str) -> None:
         spec = self.active_plugin.command_specs.get(command_name)
@@ -438,14 +517,18 @@ class MainWindow(tk.Tk):
             # Don't disturb an in-flight command's output.
             return
         cache_key = self.cache_key_for(command_name)
-        if cache_key is not None and cache_key in self.output_cache:
+        if cache_key in self.output_cache:
             self.output_panel.restore(self.output_cache[cache_key])
             return
         # No cache yet. For read-only commands that need nothing, run with defaults.
-        if cache_key is not None and command_name in self.autorun_on_select and self.current_interpreter is not None:
+        # For pipx, auto-run even without a selected interpreter (global_cli tool).
+        can_autorun = command_name in self.autorun_on_select and (
+            self.current_interpreter is not None or self.active_plugin.name == "pipx"
+        )
+        if can_autorun:
             self.output_panel.clear()
             self.output_panel.append_combined(
-                f"[auto] Running pip {command_name.replace('_', ' ')} with defaults...\n",
+                f"[auto] Running {command_name.replace('_', ' ')} with defaults...\n",
                 tag="hint",
             )
             if self.command_form:
@@ -459,10 +542,9 @@ class MainWindow(tk.Tk):
             return
         self.show_output_for_command(self.command_form.spec.name)
 
-    def cache_key_for(self, command_name: str) -> tuple[str, str] | None:
-        if self.current_interpreter is None:
-            return None
-        return (self.current_interpreter.path, command_name)
+    def cache_key_for(self, command_name: str) -> tuple[str, str]:
+        path = self.current_interpreter.path if self.current_interpreter is not None else self.active_plugin.name
+        return (path, command_name)
 
     def on_form_change(self) -> None:
         if self.command_form and self.command_form.spec and self.help_panel:
@@ -498,7 +580,7 @@ class MainWindow(tk.Tk):
     # -------------------------------------------------------------- runners
 
     def run_command(self, pip_args: list[str], label: str) -> None:
-        if self.current_interpreter is None:
+        if self.current_interpreter is None and self.active_plugin.name != "pipx":
             error_dialog(self, "No Interpreter", "Please select a Python interpreter first.")
             return
         if self.runner.is_running():
@@ -543,7 +625,19 @@ class MainWindow(tk.Tk):
             and command_name in {"install", "download", "wheel", "index_versions"}
         ):
             effective_pip_args.extend(["--index-url", self.active_index_url])
-        full_argv = self.runner.build_argv(self.current_interpreter.path, effective_pip_args, plugin=self.active_plugin)
+
+        # For pipx, inject --python if the user picked a specific interpreter.
+        pipx_python = getattr(self, "_pipx_python_path", None)
+        if self.active_plugin.name == "pipx" and pipx_python is not None and "--python" not in effective_pip_args:
+            effective_pip_args = ["--python", pipx_python, *effective_pip_args]
+
+        # For pipx we have no interpreter row, so use the system python as a placeholder.
+        interpreter_path = (
+            self.current_interpreter.path
+            if self.current_interpreter is not None
+            else (self._pipx_python_path or "python")
+        )
+        full_argv = self.runner.build_argv(interpreter_path, effective_pip_args, plugin=self.active_plugin)
 
         self.output_panel.clear()
         self.stderr_buffer = []
@@ -552,12 +646,13 @@ class MainWindow(tk.Tk):
         redacted_argv = PipRunner.redact_argv(full_argv, secret_flags=self.active_plugin.secret_flags)
         display_argv = full_argv if self.show_secrets.get() else redacted_argv
 
+        interp = self.current_interpreter
         self.output_panel.set_command_info(
             {
                 "Command": label,
-                "Interpreter": self.current_interpreter.path,
-                "Python Version": self.current_interpreter.version,
-                "Pip Version": self.current_interpreter.pip_version,
+                "Interpreter": interp.path if interp else interpreter_path,
+                "Python Version": interp.version if interp else "",
+                "Pip Version": interp.pip_version if interp else "",
                 "Working Directory": cwd,
                 "Argv": str(display_argv),
                 "Started": datetime.now().isoformat(timespec="seconds"),
@@ -758,10 +853,28 @@ class MainWindow(tk.Tk):
         # ran last time instead of a blank panel. Key uses the *current* run,
         # not whatever the form is showing now (the user may have already
         # clicked another command in the tree).
-        if self.current_run_command is not None and self.current_interpreter is not None:
-            key = (self.current_interpreter.path, self.current_run_command)
+        finished_command = self.current_run_command
+        if finished_command is not None:
+            cache_path = (
+                self.current_interpreter.path if self.current_interpreter is not None else self.active_plugin.name
+            )
+            key = (cache_path, finished_command)
             self.output_cache[key] = self.output_panel.snapshot()
         self.current_run_command = None
+
+        # Notify custom panels about run completion.
+        if (
+            finished_command is not None
+            and self.command_form is not None
+            and hasattr(self.command_form, "notify_run_done")
+        ):
+            self.command_form.notify_run_done(exit_code, finished_command, list(self.last_run_argv))
+
+        # Post-process pip-audit JSON output.
+        if finished_command == "audit" and exit_code == 0 and "--output-format" in self.last_run_argv:
+            fmt_idx = self.last_run_argv.index("--output-format")
+            if fmt_idx + 1 < len(self.last_run_argv) and self.last_run_argv[fmt_idx + 1] == "json":
+                self._try_show_audit_result()
 
         if self.history is not None and self.current_interpreter is not None:
             redacted = getattr(self, "run_redacted_argv", [])
@@ -797,6 +910,25 @@ class MainWindow(tk.Tk):
                     "Upgrade Failed",
                     f"pip-ui upgrade exited with code {exit_code}. See the output panel for details.",
                 )
+
+    def _try_show_audit_result(self) -> None:
+        """Parse pip-audit JSON from the output panel and show AuditResultPanel in a dialog."""
+        try:
+            from pip_ui.ui.audit_result_panel import AuditResultPanel
+        except ImportError:
+            return
+
+        raw = self.output_panel.get_stdout_text()
+        if not raw:
+            return
+
+        top = tk.Toplevel(self)
+        top.title("pip-audit Results")
+        top.geometry("800x500")
+        panel = AuditResultPanel(top)
+        panel.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        if not panel.load_json(raw):
+            top.title("pip-audit Results (raw — JSON parse failed)")
 
     # --------------------------------------------------------------- misc
 

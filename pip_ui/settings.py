@@ -13,6 +13,10 @@ DEFAULTS: dict[str, Any] = {
     "window_height": 700,
     "redact_secrets": True,
     "show_advanced": False,
+    # Tool switching
+    "active_tool": "pip",
+    # Per-tool options; keyed by tool name
+    "tool_options": {},
 }
 
 
@@ -52,3 +56,12 @@ class AppSettings:
             self.load()
         self.cache[key] = value
         self.save(self.cache)
+
+    def get_tool_options(self, tool_name: str) -> dict[str, Any]:
+        all_opts: dict[str, Any] = self.get("tool_options", {}) or {}
+        return dict(all_opts.get(tool_name, {}))
+
+    def set_tool_options(self, tool_name: str, opts: dict[str, Any]) -> None:
+        all_opts: dict[str, Any] = self.get("tool_options", {}) or {}
+        all_opts[tool_name] = opts
+        self.set("tool_options", all_opts)
