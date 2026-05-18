@@ -4,10 +4,11 @@
 
 from __future__ import annotations
 
-import tkinter as tk
 from unittest.mock import MagicMock
 
 import pytest
+
+tk = pytest.importorskip("tkinter")
 
 
 @pytest.fixture(scope="module")

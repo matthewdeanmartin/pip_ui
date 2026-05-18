@@ -2709,6 +2709,9 @@ wheels = [
 name = "pip-ui-tkinter"
 version = "0.1.0"
 source = { editable = "." }
+dependencies = [
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+]
 
 [package.optional-dependencies]
 all-tools = [
@@ -2801,6 +2804,7 @@ requires-dist = [
     { name = "pip-audit", marker = "extra == 'pip-audit'", specifier = ">=2.7" },
     { name = "pipx", marker = "extra == 'all-tools'", specifier = ">=1.4" },
     { name = "pipx", marker = "extra == 'pipx'", specifier = ">=1.4" },
+    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0" },
     { name = "twine", marker = "extra == 'all-tools'", specifier = ">=5.0" },
     { name = "twine", marker = "extra == 'twine'", specifier = ">=5.0" },
     { name = "virtualenv", marker = "extra == 'all-tools'", specifier = ">=20.0" },

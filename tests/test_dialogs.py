@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import sys
-import tkinter as tk
-from tkinter import filedialog, messagebox
 from typing import cast
 
 import pytest
 
-from pip_ui.ui import dialogs
+try:
+    import tkinter as tk
+    from tkinter import filedialog, messagebox
+
+    from pip_ui.ui import dialogs
+except ModuleNotFoundError:
+    pytest.skip("tkinter not installed", allow_module_level=True)
 
 
 def test_confirm_dialog_passes_arguments(monkeypatch: pytest.MonkeyPatch) -> None:

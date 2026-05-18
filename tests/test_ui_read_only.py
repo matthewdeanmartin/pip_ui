@@ -2,22 +2,27 @@
 
 from __future__ import annotations
 
-import tkinter as tk
-from tkinter import ttk
+import gc
 from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import MagicMock
 
 import pytest
 
-from pip_ui.command_specs import COMMAND_SPECS
-from pip_ui.models import InterpreterInfo
-from pip_ui.ui import config_view as config_view_module
-from pip_ui.ui.command_form import CommandForm
-from pip_ui.ui.config_view import ConfigView
-from pip_ui.ui.global_options_dialog import GlobalOptionsDialog
-from pip_ui.ui.main_window import MainWindow, pip_release_notes_anchor
-from pip_ui.ui.requirements_picker import RequirementsPicker
+try:
+    import tkinter as tk
+    from tkinter import ttk
+
+    from pip_ui.command_specs import COMMAND_SPECS
+    from pip_ui.models import InterpreterInfo
+    from pip_ui.ui import config_view as config_view_module
+    from pip_ui.ui.command_form import CommandForm
+    from pip_ui.ui.config_view import ConfigView
+    from pip_ui.ui.global_options_dialog import GlobalOptionsDialog
+    from pip_ui.ui.main_window import MainWindow, pip_release_notes_anchor
+    from pip_ui.ui.requirements_picker import RequirementsPicker
+except ModuleNotFoundError:
+    pytest.skip("tkinter not installed", allow_module_level=True)
 
 
 @pytest.fixture(scope="module")
@@ -29,6 +34,7 @@ def root():
         pytest.skip(f"Tkinter initialize failed (likely headless): {e}")
     root.withdraw()
     yield root
+    gc.collect()
     root.destroy()
 
 
@@ -40,14 +46,17 @@ def test_requirements_picker_detection(root, tmp_path):
 
     on_change = MagicMock()
     picker = RequirementsPicker(root, on_change=on_change)
-    picker.set_directory(tmp_path)
+    try:
+        picker.set_directory(tmp_path)
 
-    # Check labels in the combobox
-    labels = picker.combo["values"]
-    assert "(none)" in labels
-    assert "requirements.txt" in labels
-    assert "dev-requirements.txt (heuristic)" in labels
-    assert "other.txt" not in labels
+        # Check labels in the combobox
+        labels = picker.combo["values"]
+        assert "(none)" in labels
+        assert "requirements.txt" in labels
+        assert "dev-requirements.txt (heuristic)" in labels
+        assert "other.txt" not in labels
+    finally:
+        picker.destroy()
 
 
 def test_command_form_read_only_list(root):
@@ -62,21 +71,24 @@ def test_command_form_read_only_list(root):
         return global_options
 
     form = CommandForm(root, on_run=on_run, global_values_provider=global_provider)
-    form.set_command(spec)
+    try:
+        form.set_command(spec)
 
-    # Verify that the form has fields matching the spec
-    spec_arg_names = {arg.name for arg in spec.args}
-    form_arg_names = {fw.arg.name for fw in form.field_widgets}
-    assert spec_arg_names.issubset(form_arg_names)
+        # Verify that the form has fields matching the spec
+        spec_arg_names = {arg.name for arg in spec.args}
+        form_arg_names = {fw.arg.name for fw in form.field_widgets}
+        assert spec_arg_names.issubset(form_arg_names)
 
-    # Simulate clicking 'Run'
-    form.do_run()
+        # Simulate clicking 'Run'
+        form.do_run()
 
-    # on_run should be called with argv and a label
-    assert on_run.called
-    args, _kwargs = on_run.call_args
-    argv = args[0]
-    assert "list" in argv
+        # on_run should be called with argv and a label
+        assert on_run.called
+        args, _kwargs = on_run.call_args
+        argv = args[0]
+        assert "list" in argv
+    finally:
+        form.destroy()
 
 
 def test_config_view_no_interpreter(root):
@@ -163,17 +175,20 @@ def test_requirements_picker_selection(root, tmp_path):
 
     on_change = MagicMock()
     picker = RequirementsPicker(root, on_change=on_change)
-    picker.set_directory(tmp_path)
+    try:
+        picker.set_directory(tmp_path)
 
-    # Find the index for requirements.txt
-    labels = list(picker.combo["values"])
-    idx = labels.index("requirements.txt")
+        # Find the index for requirements.txt
+        labels = list(picker.combo["values"])
+        idx = labels.index("requirements.txt")
 
-    # Simulate selection
-    picker.combo.current(idx)
-    picker.on_combo_select(None)
+        # Simulate selection
+        picker.combo.current(idx)
+        picker.on_combo_select(None)
 
-    on_change.assert_called_with(str(req_path))
+        on_change.assert_called_with(str(req_path))
+    finally:
+        picker.destroy()
 
 
 def test_pip_release_notes_anchor_formats_version() -> None:

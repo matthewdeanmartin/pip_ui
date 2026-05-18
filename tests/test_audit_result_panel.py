@@ -5,9 +5,10 @@
 from __future__ import annotations
 
 import json
-import tkinter as tk
 
 import pytest
+
+tk = pytest.importorskip("tkinter")
 
 
 @pytest.fixture(scope="module")
