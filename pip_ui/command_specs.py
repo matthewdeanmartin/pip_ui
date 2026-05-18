@@ -889,4 +889,8 @@ SPECIAL_ARGV: dict[str, list[str]] = {
     "debug": ["debug"],
     "version": ["--version"],
     "help": ["help"],
+    # Tool-specific version commands — all CLIs use --version, not a "version" subcommand.
+    "venv_version": ["--version"],
+    "audit_version": ["--version"],
+    "twine_version": ["--version"],
 }

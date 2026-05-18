@@ -144,6 +144,9 @@ class HatchEnvPanel(ttk.Frame):
     def copy_command(self) -> None:
         self.command_form.copy_command()
 
+    def set_preview_prefix(self, prefix: list[str]) -> None:
+        self.command_form.set_preview_prefix(prefix)
+
     def set_workdir(self, path: str) -> None:
         self._workdir = path
 
@@ -166,7 +169,7 @@ class HatchEnvPanel(ttk.Frame):
                     capture_output=True,
                     cwd=self._workdir,
                     timeout=15,
-                    **utf8_subprocess_kwargs(),
+                    **utf8_subprocess_kwargs(strip_venv=True),
                     check=False,
                     shell=False,
                 )

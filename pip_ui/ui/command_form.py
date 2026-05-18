@@ -120,6 +120,7 @@ class CommandForm(ttk.Frame):
         global_values_provider: Callable[[], dict[str, Any]] | None = None,
         on_open_global_options: Callable[[], None] | None = None,
         global_requirements_provider: Callable[[], str | None] | None = None,
+        show_global_options: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(parent, **kwargs)
@@ -128,6 +129,8 @@ class CommandForm(ttk.Frame):
         self.global_values_provider = global_values_provider or default_global_values
         self.on_open_global_options = on_open_global_options
         self.global_requirements_provider = global_requirements_provider or (lambda: None)
+        self.show_global_options = show_global_options
+        self._preview_prefix: list[str] = ["python", "-m", "pip"]
         self.spec: CommandSpec | None = None
         self.field_widgets: list[FieldWidget] = []
         self.raw_extra_var = tk.StringVar(value="")
@@ -167,21 +170,22 @@ class CommandForm(ttk.Frame):
         self.preview_argv = tk.Text(preview_frame, height=3, font=MONO_FONT, wrap=tk.WORD, state=tk.DISABLED)
         self.preview_argv.pack(fill=tk.X, padx=4, pady=2)
 
-        globals_frame = ttk.Frame(self)
-        globals_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=8, pady=2)
-        ttk.Button(
-            globals_frame,
-            text="Global Options...",
-            command=self.open_global_options,
-        ).pack(side=tk.LEFT, padx=4, pady=2)
         self.globals_summary_var = tk.StringVar(value="(all defaults)")
-        ttk.Label(
-            globals_frame,
-            textvariable=self.globals_summary_var,
-            foreground="#444",
-            wraplength=600,
-            justify=tk.LEFT,
-        ).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=4)
+        if self.show_global_options:
+            globals_frame = ttk.Frame(self)
+            globals_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=8, pady=2)
+            ttk.Button(
+                globals_frame,
+                text="Global Options...",
+                command=self.open_global_options,
+            ).pack(side=tk.LEFT, padx=4, pady=2)
+            ttk.Label(
+                globals_frame,
+                textvariable=self.globals_summary_var,
+                foreground="#444",
+                wraplength=600,
+                justify=tk.LEFT,
+            ).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=4)
 
         # Now the scrollable fields area fills whatever space is left.
         canvas_host = ttk.Frame(self)
@@ -278,7 +282,8 @@ class CommandForm(ttk.Frame):
         if self.spec is None:
             return []
         argv = build_argv_for_spec(self.spec, self.collect_values())
-        argv += render_global_args(self.collect_global_values())
+        if self.show_global_options:
+            argv += render_global_args(self.collect_global_values())
         argv += parse_raw_extra(self.raw_extra_var.get())
         return argv
 
@@ -289,6 +294,11 @@ class CommandForm(ttk.Frame):
         else:
             self.globals_summary_var.set("  •  ".join(chips))
 
+    def set_preview_prefix(self, prefix: list[str]) -> None:
+        """Set the executable prefix shown in the command preview (e.g. ['python', '-m', 'build'])."""
+        self._preview_prefix = prefix
+        self.update_preview()
+
     def open_global_options(self) -> None:
         if self.on_open_global_options is not None:
             self.on_open_global_options()
@@ -296,7 +306,7 @@ class CommandForm(ttk.Frame):
     def update_preview(self) -> None:
         argv = self.get_argv()
         runner = PipRunner()
-        shell_str = runner.format_command(["python", "-m", "pip", *argv])
+        shell_str = runner.format_command([*self._preview_prefix, *argv])
         argv_json = json.dumps(argv, indent=None)
 
         self.preview_shell.configure(state=tk.NORMAL)
@@ -335,15 +345,19 @@ class CommandForm(ttk.Frame):
     def copy_command(self) -> None:
         argv = self.get_argv()
         runner = PipRunner()
-        text = runner.format_command(["python", "-m", "pip", *argv])
+        text = runner.format_command([*self._preview_prefix, *argv])
         self.clipboard_clear()
         self.clipboard_append(text)
 
     def copy_as_python(self) -> None:
         """Generate and copy subprocess.run() Python code for the current command."""
         argv = self.get_argv()
-        full = ["sys.executable", "-m", "pip", *argv]
-        # Build a repr-style list literal for the argv.
+        # Use the stored prefix; replace a bare executable name with sys.executable
+        # when the prefix starts with python/pythonX.
+        prefix = list(self._preview_prefix)
+        if prefix and prefix[0].lower().startswith("python"):
+            prefix[0] = "sys.executable"
+        full = [*prefix, *argv]
         items = ", ".join(f'"{a}"' for a in full)
         items = items.replace('"sys.executable"', "sys.executable")
         code_lines = [

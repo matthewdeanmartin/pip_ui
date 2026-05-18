@@ -12,6 +12,13 @@ from pip_ui.models import ArgSpec, CommandSpec
 # e.g. "twine_upload" -> "upload", "hatch_build" -> "build"
 _TOOL_PREFIXES = ("twine_", "hatch_", "flit_", "pipx_", "venv_", "audit_")
 
+# Spec names whose tool takes no subcommand — flags/positionals go directly to the
+# module/executable with no leading subcommand token.
+# "audit"  → python -m pip_audit [flags]
+# "build"  → python -m build [flags]
+# "create" → python -m virtualenv <dest> [flags]
+_NO_SUBCOMMAND = frozenset({"audit", "build", "create"})
+
 
 def _subcommand_for(spec_name: str) -> str:
     """Return a space-joined subcommand string for a spec name.
@@ -21,7 +28,10 @@ def _subcommand_for(spec_name: str) -> str:
     e.g. hatch_env_show -> "env show"  (caller splits on spaces)
          twine_upload   -> "upload"
          pipx_list      -> "list"
+         audit          -> ""  (pip_audit takes no subcommand)
     """
+    if spec_name in _NO_SUBCOMMAND:
+        return ""
     name = spec_name
     for prefix in _TOOL_PREFIXES:
         if name.startswith(prefix):
@@ -119,7 +129,11 @@ def render_general_args(
         if arg.flag:
             out.extend([arg.flag, str(value)])
         else:
-            out.append(str(value))
+            # Positional arg: only emit if different from the default so tools
+            # that treat an explicit default (e.g. "." or ".venv") as an error
+            # can rely on their own built-in default instead.
+            if str(value) != str(arg.default if arg.default is not None else ""):
+                out.append(str(value))
     return out
 
 

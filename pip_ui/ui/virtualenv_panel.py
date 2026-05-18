@@ -111,6 +111,9 @@ class VirtualenvPanel(ttk.Frame):
     def copy_command(self) -> None:
         self.command_form.copy_command()
 
+    def set_preview_prefix(self, prefix: list[str]) -> None:
+        self.command_form.set_preview_prefix(prefix)
+
     # ---- internal -----------------------------------------------------------
 
     def _on_run(self, pip_args: list[str], label: str) -> None:

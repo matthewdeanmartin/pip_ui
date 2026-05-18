@@ -152,6 +152,9 @@ class PipxAppsPanel(ttk.Frame):
     def copy_command(self) -> None:
         self.command_form.copy_command()
 
+    def set_preview_prefix(self, prefix: list[str]) -> None:
+        self.command_form.set_preview_prefix(prefix)
+
     def notify_run_done(self, exit_code: int, spec_name: str, _argv: list[str]) -> None:
         if spec_name in _REFRESH_TRIGGERS and exit_code == 0:
             self.refresh_apps()
@@ -169,7 +172,7 @@ class PipxAppsPanel(ttk.Frame):
                     [pipx_exe, "list", "--json"],
                     capture_output=True,
                     timeout=20,
-                    **utf8_subprocess_kwargs(),
+                    **utf8_subprocess_kwargs(strip_venv=True),
                     check=False,
                     shell=False,
                 )

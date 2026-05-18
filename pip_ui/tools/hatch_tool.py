@@ -199,28 +199,20 @@ _SPECS: dict[str, CommandSpec] = {
     ),
     "hatch_fmt": CommandSpec(
         name="hatch_fmt",
-        label="Format",
+        label="Format / Lint",
         group="Run",
-        description="Run the project formatter.",
+        description="Run the project formatter and linter (hatch fmt). Use --check to lint without modifying files.",
         safety_level=SafetyLevel.MODIFIES_ENV,
         args=[
             ArgSpec(
                 name="check",
                 flag="--check",
                 field_type="checkbox",
-                label="Check Only",
-                help="Check formatting without making changes.",
+                label="Check Only (lint)",
+                help="Check formatting and linting without making changes.",
                 default=False,
             ),
         ],
-    ),
-    "hatch_lint": CommandSpec(
-        name="hatch_lint",
-        label="Lint",
-        group="Run",
-        description="Run the project linter.",
-        safety_level=SafetyLevel.READ_ONLY,
-        args=[],
     ),
 }
 

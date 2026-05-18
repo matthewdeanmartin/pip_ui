@@ -374,6 +374,7 @@ class MainWindow(tk.Tk):
             global_values_provider=lambda: dict(self.global_options),
             on_open_global_options=self.open_global_options_dialog,
             global_requirements_provider=lambda: self.global_requirements_file,
+            show_global_options=True,
         )
         self.middle_paned.add(self.command_form, weight=1)
 
@@ -399,6 +400,9 @@ class MainWindow(tk.Tk):
             self.command_form = None
 
         panel_class = plugin.panel_class
+        show_globals = plugin.name == "pip"
+        # kwargs shared between CommandForm and panel wrappers — must NOT include
+        # show_global_options because panel classes forward **kwargs to ttk.Frame.
         form_kwargs: dict[str, Any] = {
             "on_run": self.run_command,
             "on_form_change": self.on_form_change,
@@ -408,17 +412,23 @@ class MainWindow(tk.Tk):
         }
 
         if panel_class is None:
-            new_panel: Any = CommandForm(self.middle_paned, **form_kwargs)
+            new_panel: Any = CommandForm(self.middle_paned, show_global_options=show_globals, **form_kwargs)
         else:
             try:
                 new_panel = panel_class(self.middle_paned, **form_kwargs)
-            except TypeError:
-                # Panel doesn't accept CommandForm kwargs (e.g. AuditResultPanel) — plain form
-                new_panel = CommandForm(self.middle_paned, **form_kwargs)
+            except (TypeError, tk.TclError):
+                # Panel doesn't accept CommandForm kwargs — fall back to a plain form.
+                new_panel = CommandForm(self.middle_paned, show_global_options=show_globals, **form_kwargs)
 
         # Insert before output_panel (index 0 in the paned window).
         self.middle_paned.insert(0, new_panel, weight=1)
         self.command_form = new_panel
+
+        # Tell the form which executable prefix to show in the command preview.
+        interp = self.current_interpreter.path if self.current_interpreter else "python"
+        preview_prefix = self.runner.build_prefix(interp, plugin)
+        if hasattr(self.command_form, "set_preview_prefix"):
+            self.command_form.set_preview_prefix(preview_prefix)
 
         # Pass workdir to panels that support it (e.g. HatchEnvPanel).
         if hasattr(self.command_form, "set_workdir"):
@@ -474,6 +484,15 @@ class MainWindow(tk.Tk):
         if self.command_form is not None:
             self.command_form.apply_show_secrets(reveal)
 
+    def _update_preview_prefix(self) -> None:
+        """Refresh the command-form preview prefix to match current interpreter + plugin."""
+        if self.command_form is None or not hasattr(self, "runner") or not hasattr(self, "active_plugin"):
+            return
+        interp = self.current_interpreter.path if self.current_interpreter else "python"
+        prefix = self.runner.build_prefix(interp, self.active_plugin)
+        if hasattr(self.command_form, "set_preview_prefix"):
+            self.command_form.set_preview_prefix(prefix)
+
     def on_interpreter_change(self, info: InterpreterInfo | None) -> None:
         prior = self.current_interpreter
         self.current_interpreter = info
@@ -491,6 +510,8 @@ class MainWindow(tk.Tk):
                 self.output_cache.clear()
                 self._start_tool_detection()
             # If a command is already selected, refresh it.
+            if hasattr(self, "_update_preview_prefix"):
+                self._update_preview_prefix()
             if self.command_form is not None and self.command_form.spec is not None:
                 self.after(0, self.refresh_current_command_output)
 
@@ -684,7 +705,15 @@ class MainWindow(tk.Tk):
             self.done_queue.put(exit_code)
 
         self.output_panel.set_running(True)
-        self.runner.run(full_argv, cwd, enqueue_stdout, enqueue_stderr, on_done, env=env)
+        self.runner.run(
+            full_argv,
+            cwd,
+            enqueue_stdout,
+            enqueue_stderr,
+            on_done,
+            env=env,
+            strip_venv=self.active_plugin.run_via == "global_cli",
+        )
 
         self.run_pip_args = effective_pip_args
         self.run_label = label
