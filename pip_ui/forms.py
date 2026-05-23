@@ -10,7 +10,7 @@ from pip_ui.models import ArgSpec, CommandSpec
 
 # Tool name prefixes stripped when building the argv subcommand token.
 # e.g. "twine_upload" -> "upload", "hatch_build" -> "build"
-_TOOL_PREFIXES = ("twine_", "hatch_", "flit_", "pipx_", "venv_", "audit_")
+_TOOL_PREFIXES = ("twine_", "hatch_", "flit_", "pipx_", "venv_", "audit_", "pypiserver_", "devpi_")
 
 # Spec names whose tool takes no subcommand — flags/positionals go directly to the
 # module/executable with no leading subcommand token.

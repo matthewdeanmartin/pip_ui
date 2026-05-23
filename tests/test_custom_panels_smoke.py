@@ -142,3 +142,75 @@ def test_pipx_apps_panel_notify_run_done_no_crash(root):
     # Should not raise even if pipx isn't installed
     panel.notify_run_done(0, "pipx_install", [])
     panel.destroy()
+
+
+# ---- PypiServerPanel --------------------------------------------------------
+
+
+def test_pypiserver_panel_constructs(root):
+    from pip_ui.ui.pypiserver_panel import PypiServerPanel
+
+    panel = PypiServerPanel(root, **_form_kwargs(root))
+    assert panel.command_form is not None
+    assert panel._tree is not None
+    panel.destroy()
+
+
+def test_pypiserver_panel_has_expected_columns(root):
+    from pip_ui.ui.pypiserver_panel import PypiServerPanel
+
+    panel = PypiServerPanel(root, **_form_kwargs(root))
+    cols = panel._tree["columns"]
+    assert "name" in cols
+    assert "version" in cols
+    assert "filename" in cols
+    panel.destroy()
+
+
+def test_pypiserver_panel_notify_run_done_no_crash(root):
+    from pip_ui.ui.pypiserver_panel import PypiServerPanel
+
+    panel = PypiServerPanel(root, **_form_kwargs(root))
+    # Should not raise even if packages dir doesn't exist
+    panel.notify_run_done(0, "pypiserver_update", [])
+    panel.destroy()
+
+
+def test_pypiserver_panel_set_packages_dir(root):
+    from pip_ui.ui.pypiserver_panel import PypiServerPanel
+
+    panel = PypiServerPanel(root, **_form_kwargs(root))
+    panel.set_packages_dir("/some/packages")
+    assert panel._packages_dir == "/some/packages"
+    panel.destroy()
+
+
+# ---- DevpiPanel -------------------------------------------------------------
+
+
+def test_devpi_panel_constructs(root):
+    from pip_ui.ui.devpi_panel import DevpiPanel
+
+    panel = DevpiPanel(root, **_form_kwargs(root))
+    assert panel.command_form is not None
+    assert panel._tree is not None
+    panel.destroy()
+
+
+def test_devpi_panel_has_expected_columns(root):
+    from pip_ui.ui.devpi_panel import DevpiPanel
+
+    panel = DevpiPanel(root, **_form_kwargs(root))
+    cols = panel._tree["columns"]
+    assert "index" in cols
+    assert "volatile" in cols
+    panel.destroy()
+
+
+def test_devpi_panel_notify_run_done_no_crash(root):
+    from pip_ui.ui.devpi_panel import DevpiPanel
+
+    panel = DevpiPanel(root, **_form_kwargs(root))
+    # Should not raise even if devpi isn't installed
+    panel.notify_run_done(0, "devpi_index_create", [])
+    panel.destroy()

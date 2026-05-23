@@ -1,6 +1,6 @@
 [project]
 name = "pip-ui-tkinter"
-version = "0.1.0"
+version = "0.2.0"
 description = "A pip UI tool"
 readme = "README.md"
 authors = [{ name = "Matthew Martin", email = "matthewdeanmartin@gmail.com" }]
@@ -24,14 +24,16 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-build      = ["build>=1.0"]
-virtualenv = ["virtualenv>=20.0"]
-twine      = ["twine>=5.0"]
-pip-audit  = ["pip-audit>=2.7"]
-hatch      = ["hatch>=1.9"]
-flit       = ["flit>=3.9"]
-pipx       = ["pipx>=1.4"]
-all-tools  = [
+build       = ["build>=1.0"]
+virtualenv  = ["virtualenv>=20.0"]
+twine       = ["twine>=5.0"]
+pip-audit   = ["pip-audit>=2.7"]
+hatch       = ["hatch>=1.9"]
+flit        = ["flit>=3.9"]
+pipx        = ["pipx>=1.4"]
+pypiserver  = ["pypiserver>=2.0"]
+devpi       = ["devpi-server>=6.0", "devpi-client>=7.0"]
+all-tools   = [
     "build>=1.0",
     "virtualenv>=20.0",
     "twine>=5.0",
@@ -39,6 +41,9 @@ all-tools  = [
     "hatch>=1.9",
     "flit>=3.9",
     "pipx>=1.4",
+    "pypiserver>=2.0",
+    "devpi-server>=6.0",
+    "devpi-client>=7.0",
 ]
 
 [project.urls]
