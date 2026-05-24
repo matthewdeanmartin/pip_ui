@@ -4,7 +4,7 @@ This document describes the phased roadmap for integrating **pypiserver** and **
 into pip-ui as first-class tool plugins, with particular focus on using them for
 end-to-end testing of the full publish→install workflow.
 
----
+______________________________________________________________________
 
 ## Phase 1 — Plugin Infrastructure *(current)*
 
@@ -28,7 +28,7 @@ end-to-end testing of the full publish→install workflow.
 - All existing tests continue to pass
 - Mypy and ruff pass clean
 
----
+______________________________________________________________________
 
 ## Phase 2 — Server Lifecycle Management
 
@@ -61,7 +61,7 @@ pip-ui that run a command and finish, server commands need special handling:
   a server, then switch to twine to upload, then back to pip to install.
 - Graceful shutdown should use SIGTERM with a timeout, then SIGKILL.
 
----
+______________________________________________________________________
 
 ## Phase 3 — End-to-End Tests with pypiserver
 
@@ -112,7 +112,7 @@ All tests in this file should be marked `@pytest.mark.integration` and
 - Tests need network-free localhost access only
 - Port conflicts: use `find_free_port()` to avoid collisions with parallel tests
 
----
+______________________________________________________________________
 
 ## Phase 4 — End-to-End Tests with devpi
 
@@ -154,7 +154,7 @@ Same as Phase 3: `@pytest.mark.integration` and `@pytest.mark.slow`.
 - devpi-server startup can be slow (~5s), so use generous timeouts
 - Tests should be fully hermetic — no shared state between tests
 
----
+______________________________________________________________________
 
 ## Phase 5 — Index Selector Integration
 
@@ -178,10 +178,10 @@ The IndexSelector at `pip_ui/ui/index_selector.py` already has the infrastructur
 for custom repos. The main additions are:
 
 1. A new `WELL_KNOWN_INDEXES` entry template for localhost servers
-2. A callback from the server manager that auto-adds the running server's URL
-3. Health status indication (green/red/grey dot) next to each index entry
+1. A callback from the server manager that auto-adds the running server's URL
+1. Health status indication (green/red/grey dot) next to each index entry
 
----
+______________________________________________________________________
 
 ## Phase 6 — CI Integration & Fixtures
 
@@ -214,7 +214,7 @@ for custom repos. The main additions are:
 - Full round-trip test (build + upload + install): < 30s each
 - Total e2e-servers CI job: < 3 minutes
 
----
+______________________________________________________________________
 
 ## Dependency Summary
 
@@ -226,7 +226,7 @@ for custom repos. The main additions are:
 | 4 | — | devpi-server, devpi-client (in test env) |
 | 6 | — | — (uses existing deps) |
 
----
+______________________________________________________________________
 
 ## Timeline Estimate
 

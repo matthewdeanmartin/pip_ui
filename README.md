@@ -13,44 +13,50 @@ A Tkinter desktop GUI that puts a friendly face on Python's most-used packaging 
 ## Features
 
 ### Multi-tool support
+
 Each tool is a plugin with its own command catalog, run mode, and (where relevant) custom panel:
 
-| Tool          | What it does in pip-ui                                       |
+| Tool | What it does in pip-ui |
 |---------------|--------------------------------------------------------------|
-| `pip`         | Install, uninstall, list, freeze, show, check, inspect, configure, cache, debug |
-| `pipx`        | Install and manage CLI apps in isolated envs; pick the Python they use |
-| `build`       | Build sdists and wheels for the current project              |
-| `virtualenv`  | Create virtual environments with a guided form               |
-| `twine`       | Upload, check, and register distributions                    |
-| `pip-audit`   | Scan an env or requirements file; results render in a dedicated panel |
-| `hatch`       | Project and environment commands with an environment panel   |
-| `flit`        | Build and publish flit-managed projects                      |
-| `pypi-server` | Run a local PyPI-compatible index for testing                |
-| `devpi`       | Drive a devpi server and client from a dedicated panel       |
+| `pip` | Install, uninstall, list, freeze, show, check, inspect, configure, cache, debug |
+| `pipx` | Install and manage CLI apps in isolated envs; pick the Python they use |
+| `build` | Build sdists and wheels for the current project |
+| `virtualenv` | Create virtual environments with a guided form |
+| `twine` | Upload, check, and register distributions |
+| `pip-audit` | Scan an env or requirements file; results render in a dedicated panel |
+| `hatch` | Project and environment commands with an environment panel |
+| `flit` | Build and publish flit-managed projects |
+| `pypi-server` | Run a local PyPI-compatible index for testing |
+| `devpi` | Drive a devpi server and client from a dedicated panel |
 
 ### Interpreter & environment awareness
+
 - Auto-discovers the system Python, the active `VIRTUAL_ENV`, project `.venv`, and `python`/`py` on `PATH`.
 - Switch interpreters per-run from the dropdown; the UI invokes commands via `python -m <tool>` against the selected interpreter so you can target any env.
 - Working-directory picker — point any command at a specific project.
 - `--diagnostics` mode prints a Markdown report on the selected interpreter without launching the GUI.
 
 ### Forms generated from command specs
+
 - Every command knows its required and optional arguments, types, choices, and help text. The form is rendered from that spec, so you get the right widget (checkbox, picker, multi-value, text) for the right flag.
 - Per-command global options dialog (proxy, index URL, trusted hosts, etc.) so you don't repeat yourself.
 - Requirements-file picker, index selector, and certificate tester live alongside the form.
 
 ### Live output and history
+
 - Stdout/stderr stream into an output panel as the command runs — no waiting for completion to see what happened.
 - Per-command output cache: re-selecting a command restores its last output instead of a blank panel.
 - Command history records every run (argv, exit code, duration). Disable with `--no-history` if you prefer not to write it to disk.
 - Common pip errors are intercepted and translated to a plain-language explanation.
 
 ### Safety and secrets
+
 - `--safe-mode` puts a confirmation dialog in front of any destructive or config-mutating command.
 - Auto-detection of global installs warns before they're committed.
 - Tool plugins declare which flags carry secrets (tokens, passwords); those values are redacted in the output panel and history file.
 
 ### Self-update check
+
 - The app checks for newer versions of `pip-ui-tkinter` in the background and surfaces an upgrade hint when one's available. Manual checks available from the menu.
 
 ## Quick start
