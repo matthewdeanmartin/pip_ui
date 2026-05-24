@@ -8,7 +8,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from pip_ui.ui.cert_tester import run_cert_check
+pytest.importorskip("tkinter")
+
+from pip_ui.ui.cert_tester import run_cert_check  # pylint: disable=wrong-import-position
 
 
 def _make_completed(returncode: int, stdout: str = "", stderr: str = "") -> MagicMock:
