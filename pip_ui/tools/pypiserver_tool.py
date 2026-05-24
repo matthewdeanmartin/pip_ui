@@ -41,7 +41,7 @@ _SPECS: dict[str, CommandSpec] = {
                 field_type="text",
                 label="Host / Interface",
                 help="Network interface to bind to.",
-                default="0.0.0.0",
+                default="localhost",
             ),
             ArgSpec(
                 name="packages_dir",
