@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from pip_ui.tools import get_plugin, get_registry
 from pip_ui.tools.build_tool import BUILD_PLUGIN
 from pip_ui.tools.flit_tool import FLIT_PLUGIN
@@ -109,6 +111,7 @@ def test_virtualenv_create_dest_is_required():
 
 
 def test_virtualenv_plugin_has_panel_class():
+    pytest.importorskip("tkinter")
     assert VIRTUALENV_PLUGIN.panel_class is not None
 
 
@@ -175,6 +178,7 @@ def test_hatch_has_env_specs():
 
 
 def test_hatch_plugin_has_panel_class():
+    pytest.importorskip("tkinter")
     assert HATCH_PLUGIN.panel_class is not None
 
 
@@ -209,4 +213,5 @@ def test_pipx_has_install_and_list():
 
 
 def test_pipx_plugin_has_panel_class():
+    pytest.importorskip("tkinter")
     assert PIPX_PLUGIN.panel_class is not None

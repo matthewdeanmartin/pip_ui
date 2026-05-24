@@ -2,9 +2,20 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from pip_ui.models import ArgSpec, CommandSpec, SafetyLevel
 from pip_ui.tools import ToolPlugin
-from pip_ui.ui.hatch_env_panel import HatchEnvPanel
+
+if TYPE_CHECKING:
+    from pip_ui.ui.hatch_env_panel import HatchEnvPanel
+
+_HATCH_ENV_PANEL_CLASS: type[HatchEnvPanel] | None
+
+try:
+    from pip_ui.ui.hatch_env_panel import HatchEnvPanel as _HATCH_ENV_PANEL_CLASS
+except ModuleNotFoundError:
+    _HATCH_ENV_PANEL_CLASS = None
 
 _GROUPS = ["Environment", "Build", "Publish", "Project", "Run"]
 
@@ -227,5 +238,5 @@ HATCH_PLUGIN = ToolPlugin(
     help_url="https://hatch.pypa.io/latest/",
     secret_flags=["--auth"],
     is_project_scoped=True,
-    panel_class=HatchEnvPanel,
+    panel_class=_HATCH_ENV_PANEL_CLASS,
 )

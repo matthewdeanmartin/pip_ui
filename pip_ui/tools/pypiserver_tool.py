@@ -2,9 +2,20 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from pip_ui.models import ArgSpec, CommandSpec, SafetyLevel
 from pip_ui.tools import ToolPlugin
-from pip_ui.ui.pypiserver_panel import PypiServerPanel
+
+if TYPE_CHECKING:
+    from pip_ui.ui.pypiserver_panel import PypiServerPanel
+
+_PYPISERVER_PANEL_CLASS: type[PypiServerPanel] | None
+
+try:
+    from pip_ui.ui.pypiserver_panel import PypiServerPanel as _PYPISERVER_PANEL_CLASS
+except ModuleNotFoundError:
+    _PYPISERVER_PANEL_CLASS = None
 
 _GROUPS = ["Server", "Packages"]
 
@@ -129,5 +140,5 @@ PYPISERVER_PLUGIN = ToolPlugin(
     command_groups=_GROUPS,
     help_url="https://pypiserver.readthedocs.io/en/latest/",
     is_project_scoped=False,
-    panel_class=PypiServerPanel,
+    panel_class=_PYPISERVER_PANEL_CLASS,
 )

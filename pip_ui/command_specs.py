@@ -893,4 +893,8 @@ SPECIAL_ARGV: dict[str, list[str]] = {
     "venv_version": ["--version"],
     "audit_version": ["--version"],
     "twine_version": ["--version"],
+    "pypiserver_version": ["--version"],
+    "devpi_version": ["--version"],
+    "devpi_index_list": ["index", "-l"],
+    "devpi_status": ["use"],
 }

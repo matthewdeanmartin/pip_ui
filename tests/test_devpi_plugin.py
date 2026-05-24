@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from pip_ui.tools.devpi_tool import DEVPI_PLUGIN
 
 
@@ -42,6 +44,7 @@ def test_devpi_login_has_password_secret():
 
 
 def test_devpi_plugin_has_panel_class():
+    pytest.importorskip("tkinter")
     assert DEVPI_PLUGIN.panel_class is not None
 
 

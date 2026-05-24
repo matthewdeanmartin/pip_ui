@@ -2,9 +2,20 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from pip_ui.models import ArgSpec, CommandSpec, SafetyLevel
 from pip_ui.tools import ToolPlugin
-from pip_ui.ui.devpi_panel import DevpiPanel
+
+if TYPE_CHECKING:
+    from pip_ui.ui.devpi_panel import DevpiPanel
+
+_DEVPI_PANEL_CLASS: type[DevpiPanel] | None
+
+try:
+    from pip_ui.ui.devpi_panel import DevpiPanel as _DEVPI_PANEL_CLASS
+except ModuleNotFoundError:
+    _DEVPI_PANEL_CLASS = None
 
 _GROUPS = ["Client", "Info"]
 
@@ -226,5 +237,5 @@ DEVPI_PLUGIN = ToolPlugin(
     command_groups=_GROUPS,
     help_url="https://devpi.net/docs/devpi/devpi/stable/+d/index.html",
     secret_flags=["--password"],
-    panel_class=DevpiPanel,
+    panel_class=_DEVPI_PANEL_CLASS,
 )

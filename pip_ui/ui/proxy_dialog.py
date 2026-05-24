@@ -91,9 +91,7 @@ class ProxyDialog(tk.Toplevel):
 
         hint = ttk.Frame(entry_frame)
         hint.pack(fill=tk.X, padx=4, pady=(0, 4))
-        tip = (
-            "Tip: use http://proxy.corp.example.com:8080 — avoid embedding passwords here; " "use a netrc file instead."
-        )
+        tip = "Tip: use http://proxy.corp.example.com:8080 — avoid embedding passwords here; use a netrc file instead."
         ttk.Label(
             hint,
             text=tip,

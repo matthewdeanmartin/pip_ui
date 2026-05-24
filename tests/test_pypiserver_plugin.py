@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from pip_ui.tools.pypiserver_tool import PYPISERVER_PLUGIN
 
 
@@ -23,6 +25,7 @@ def test_pypiserver_has_version_spec():
 
 
 def test_pypiserver_plugin_has_panel_class():
+    pytest.importorskip("tkinter")
     assert PYPISERVER_PLUGIN.panel_class is not None
 
 

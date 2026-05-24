@@ -22,4 +22,4 @@ __keywords__ = ["pip-ui-tkinter", "pip"]
 __license__ = "MIT"
 __requires_python__ = ">=3.10"
 __status__ = "3 - Alpha"
-__dependencies__: list[str] = []
+__dependencies__ = ["tomli>=2.0; python_version < '3.11'"]

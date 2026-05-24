@@ -87,6 +87,23 @@ def build_argv_for_spec(spec: CommandSpec, values: dict[str, Any]) -> list[str]:
             index_argv.append(pkg)
         index_argv += render_general_args(spec, values, skip={"package"})
         return index_argv
+    if spec.name == "devpi_index_create":
+        index_name = str(values.get("index_name") or "").strip()
+        index_argv = ["index", "-c"]
+        if index_name:
+            index_argv.append(index_name)
+        bases = values.get("bases")
+        if bases is not None:
+            index_argv.append(f"bases={bases}")
+        if "volatile" in values:
+            index_argv.append(f"volatile={'True' if values.get('volatile') else 'False'}")
+        return index_argv
+    if spec.name == "devpi_index_delete":
+        index_name = str(values.get("index_name") or "").strip()
+        index_argv = ["index", "--delete"]
+        if index_name:
+            index_argv.append(index_name)
+        return index_argv
 
     # Generic path: derive subcommand token(s) from the spec name.
     # Multi-word subcommands (e.g. hatch_env_show -> "env show") become

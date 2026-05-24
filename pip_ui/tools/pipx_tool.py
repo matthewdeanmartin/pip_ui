@@ -2,9 +2,20 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from pip_ui.models import ArgSpec, CommandSpec, SafetyLevel
 from pip_ui.tools import ToolPlugin
-from pip_ui.ui.pipx_apps_panel import PipxAppsPanel
+
+if TYPE_CHECKING:
+    from pip_ui.ui.pipx_apps_panel import PipxAppsPanel
+
+_PIPX_APPS_PANEL_CLASS: type[PipxAppsPanel] | None
+
+try:
+    from pip_ui.ui.pipx_apps_panel import PipxAppsPanel as _PIPX_APPS_PANEL_CLASS
+except ModuleNotFoundError:
+    _PIPX_APPS_PANEL_CLASS = None
 
 _GROUPS = ["Apps", "Environments"]
 
@@ -326,5 +337,5 @@ PIPX_PLUGIN = ToolPlugin(
     command_groups=_GROUPS,
     help_url="https://pipx.pypa.io/stable/",
     hide_interpreter_picker=True,
-    panel_class=PipxAppsPanel,
+    panel_class=_PIPX_APPS_PANEL_CLASS,
 )

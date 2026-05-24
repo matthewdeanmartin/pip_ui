@@ -31,6 +31,7 @@ PROJECT_DIR = str(Path(__file__).parent.parent.resolve())
 
 # A temp dir used as the virtualenv destination and build output dir.
 TMPDIR = tempfile.gettempdir()
+PIPX_TEST_PACKAGE = "cowsay"
 
 
 # ---------------------------------------------------------------------------
@@ -62,7 +63,7 @@ def run_sync(argv: list[str], cwd: str = PROJECT_DIR, timeout: int = 120) -> tup
     return exit_code, "".join(stdout_lines), "".join(stderr_lines)
 
 
-def build_full_argv(plugin_name: str, spec_name: str, values: dict) -> list[str]:
+def build_full_argv(plugin_name: str, spec_name: str, values: dict[str, object]) -> list[str]:
     """Build the complete argv the way MainWindow does."""
     plugin = get_plugin(plugin_name)
     assert plugin is not None, f"Plugin '{plugin_name}' not found"
@@ -72,12 +73,12 @@ def build_full_argv(plugin_name: str, spec_name: str, values: dict) -> list[str]
     return runner.build_argv(PYTHON, tool_args, plugin)
 
 
-def default_values(plugin_name: str, spec_name: str) -> dict:
+def default_values(plugin_name: str, spec_name: str) -> dict[str, object]:
     """Return a dict of field defaults for the named spec."""
     plugin = get_plugin(plugin_name)
     assert plugin is not None
     spec = plugin.command_specs[spec_name]
-    out: dict = {}
+    out: dict[str, object] = {}
     for arg in spec.args:
         if arg.field_type == "checkbox":
             out[arg.name] = bool(arg.default)
@@ -354,7 +355,7 @@ def test_flit_build_sdist_argv_structure():
 
 
 # ---------------------------------------------------------------------------
-# pipx — install & uninstall python3-alias
+# pipx — install & uninstall a small CLI package
 # ---------------------------------------------------------------------------
 
 
@@ -362,47 +363,48 @@ def test_flit_build_sdist_argv_structure():
 def test_pipx_install_argv_structure():
     """pipx install: verify argv tokens."""
     values = default_values("pipx", "pipx_install")
-    values["package"] = "python3-alias"
+    values["package"] = PIPX_TEST_PACKAGE
     argv = build_full_argv("pipx", "pipx_install", values)
     assert "pipx" in argv[0]
     assert "install" in argv
-    assert "python3-alias" in argv
+    assert PIPX_TEST_PACKAGE in argv
 
 
 @pytest.mark.integration
 def test_pipx_uninstall_argv_structure():
     """pipx uninstall: verify argv tokens."""
     values = default_values("pipx", "pipx_uninstall")
-    values["package"] = "python3-alias"
+    values["package"] = PIPX_TEST_PACKAGE
     argv = build_full_argv("pipx", "pipx_uninstall", values)
     assert "pipx" in argv[0]
     assert "uninstall" in argv
-    assert "python3-alias" in argv
+    assert PIPX_TEST_PACKAGE in argv
 
 
 @pytest.mark.integration
 @pytest.mark.slow
-def test_pipx_install_and_uninstall_python3_alias():
-    """pipx: install then uninstall python3-alias (real network call)."""
+def test_pipx_install_and_uninstall_test_package():
+    """pipx: install then uninstall a lightweight CLI package."""
     # Install
     install_values = default_values("pipx", "pipx_install")
-    install_values["package"] = "python3-alias"
+    install_values["package"] = PIPX_TEST_PACKAGE
     install_argv = build_full_argv("pipx", "pipx_install", install_values)
     install_code, install_out, install_err = run_sync(install_argv, timeout=120)
     assert install_code != -1, f"pipx install subprocess failed to start.\nstderr: {install_err}"
     # pipx exits 0 on clean install or if the package is already installed
     assert install_code == 0, (
-        f"pipx install python3-alias failed (exit {install_code}).\n" f"stdout: {install_out}\nstderr: {install_err}"
+        f"pipx install {PIPX_TEST_PACKAGE} failed (exit {install_code}).\n"
+        f"stdout: {install_out}\nstderr: {install_err}"
     )
 
     # Uninstall
     uninstall_values = default_values("pipx", "pipx_uninstall")
-    uninstall_values["package"] = "python3-alias"
+    uninstall_values["package"] = PIPX_TEST_PACKAGE
     uninstall_argv = build_full_argv("pipx", "pipx_uninstall", uninstall_values)
     uninstall_code, uninstall_out, uninstall_err = run_sync(uninstall_argv, timeout=60)
     assert uninstall_code != -1, f"pipx uninstall subprocess failed to start.\nstderr: {uninstall_err}"
     assert uninstall_code == 0, (
-        f"pipx uninstall python3-alias failed (exit {uninstall_code}).\n"
+        f"pipx uninstall {PIPX_TEST_PACKAGE} failed (exit {uninstall_code}).\n"
         f"stdout: {uninstall_out}\nstderr: {uninstall_err}"
     )
 
@@ -482,23 +484,23 @@ def test_build_argv_for_spec_flit_build_sdist():
 
 
 def test_build_argv_for_spec_pipx_install():
-    """pipx_install spec builds ['install', 'python3-alias']."""
+    """pipx_install spec builds ['install', package]."""
     plugin = get_plugin("pipx")
     assert plugin is not None
     spec = plugin.command_specs["pipx_install"]
-    argv = build_argv_for_spec(spec, {"package": "python3-alias", "force": False, "include_deps": False})
+    argv = build_argv_for_spec(spec, {"package": PIPX_TEST_PACKAGE, "force": False, "include_deps": False})
     assert argv[0] == "install"
-    assert "python3-alias" in argv
+    assert PIPX_TEST_PACKAGE in argv
 
 
 def test_build_argv_for_spec_pipx_uninstall():
-    """pipx_uninstall spec builds ['uninstall', 'python3-alias']."""
+    """pipx_uninstall spec builds ['uninstall', package]."""
     plugin = get_plugin("pipx")
     assert plugin is not None
     spec = plugin.command_specs["pipx_uninstall"]
-    argv = build_argv_for_spec(spec, {"package": "python3-alias"})
+    argv = build_argv_for_spec(spec, {"package": PIPX_TEST_PACKAGE})
     assert argv[0] == "uninstall"
-    assert "python3-alias" in argv
+    assert PIPX_TEST_PACKAGE in argv
 
 
 def test_build_argv_for_spec_audit_version():

@@ -2,9 +2,20 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from pip_ui.models import ArgSpec, CommandSpec, SafetyLevel
 from pip_ui.tools import ToolPlugin
-from pip_ui.ui.virtualenv_panel import VirtualenvPanel
+
+if TYPE_CHECKING:
+    from pip_ui.ui.virtualenv_panel import VirtualenvPanel
+
+_VIRTUALENV_PANEL_CLASS: type[VirtualenvPanel] | None
+
+try:
+    from pip_ui.ui.virtualenv_panel import VirtualenvPanel as _VIRTUALENV_PANEL_CLASS
+except ModuleNotFoundError:
+    _VIRTUALENV_PANEL_CLASS = None
 
 _GROUPS = ["Create", "Manage"]
 
@@ -113,5 +124,5 @@ VIRTUALENV_PLUGIN = ToolPlugin(
     command_specs=_SPECS,
     command_groups=_GROUPS,
     help_url="https://virtualenv.pypa.io/en/latest/",
-    panel_class=VirtualenvPanel,
+    panel_class=_VIRTUALENV_PANEL_CLASS,
 )
