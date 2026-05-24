@@ -3059,7 +3059,7 @@ wheels = [
 
 [[package]]
 name = "pip-ui-tkinter"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "tomli", marker = "python_full_version < '3.11'" },

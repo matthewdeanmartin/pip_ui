@@ -49,6 +49,11 @@ def main() -> None:
         action="store_true",
         help="Prompt for confirmation before any potentially destructive command.",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Do not execute commands; print them to the output panel instead.",
+    )
 
     args = parser.parse_args()
 
@@ -72,6 +77,7 @@ def main() -> None:
     app = MainWindow(
         no_history=args.no_history,
         safe_mode=args.safe_mode,
+        dry_run=args.dry_run,
     )
 
     if args.interpreter:

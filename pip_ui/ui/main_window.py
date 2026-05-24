@@ -53,10 +53,11 @@ from pip_ui.ui.tool_switcher import ToolSwitcher
 
 
 class MainWindow(tk.Tk):
-    def __init__(self, no_history: bool = False, safe_mode: bool = False) -> None:
+    def __init__(self, no_history: bool = False, safe_mode: bool = False, dry_run: bool = False) -> None:
         super().__init__()
         self.no_history = no_history
         self.safe_mode = safe_mode
+        self.dry_run = dry_run
         self.settings = AppSettings()
         self.settings.load()
         default_plugin = get_plugin("pip")
@@ -713,6 +714,7 @@ class MainWindow(tk.Tk):
             on_done,
             env=env,
             strip_venv=self.active_plugin.run_via == "global_cli",
+            dry_run=self.dry_run,
         )
 
         self.run_pip_args = effective_pip_args

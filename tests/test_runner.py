@@ -103,3 +103,22 @@ def test_run_uses_utf8_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     assert captured["errors"] == "replace"
     assert captured["env"]["PYTHONUTF8"] == "1"
     assert captured["env"]["PYTHONIOENCODING"] == "utf-8"
+
+
+def test_run_dry_run() -> None:
+    stdout_lines: list[str] = []
+    done = threading.Event()
+
+    runner = PipRunner()
+    runner.run(
+        ["python", "-m", "pip", "install", "requests"],
+        ".",
+        stdout_lines.append,
+        lambda _line: None,
+        lambda _code: done.set(),
+        dry_run=True,
+    )
+
+    assert done.wait(timeout=2)
+    assert len(stdout_lines) == 1
+    assert "Dry run: python -m pip install requests" in stdout_lines[0]

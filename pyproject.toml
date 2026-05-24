@@ -1,6 +1,6 @@
 [project]
 name = "pip-ui-tkinter"
-version = "0.2.0"
+version = "0.3.0"
 description = "A pip UI tool"
 readme = "README.md"
 authors = [{ name = "Matthew Martin", email = "matthewdeanmartin@gmail.com" }]

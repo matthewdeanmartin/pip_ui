@@ -96,11 +96,17 @@ class PipRunner:
         on_done: Callable[[int], None],
         env: dict[str, str] | None = None,
         strip_venv: bool = False,
+        dry_run: bool = False,
     ) -> None:
         self.cancelled = False
         self.killed = False
 
         def worker() -> None:
+            if dry_run:
+                on_stdout(f"Dry run: {self.format_command(argv)}\n")
+                on_done(0)
+                return
+
             kwargs = utf8_subprocess_kwargs(strip_venv=strip_venv)
             if env is not None:
                 merged = dict(kwargs.get("env") or {})

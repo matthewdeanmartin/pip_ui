@@ -83,19 +83,28 @@ def test_main_runs_diagnostics_without_launching_ui(monkeypatch: pytest.MonkeyPa
     assert calls["diagnostics"] == "C:\\Python313\\python.exe"
 
 
-def test_main_exits_when_tkinter_is_unavailable(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """The CLI should emit a helpful error if Tkinter is missing."""
+def test_main_with_dry_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    """CLI should pass dry_run=True to MainWindow."""
+    pytest.importorskip("tkinter")
+    from pip_ui.ui.main_window import MainWindow
+
+    init_calls = []
+
+    def mock_init(self, *args, **kwargs):
+        init_calls.append(kwargs)
+        # Don't call real __init__ as it builds widgets
+        self.tk = SimpleNamespace(call=lambda *a: None)
+
+    monkeypatch.setattr(MainWindow, "__init__", mock_init)
+    monkeypatch.setattr(MainWindow, "after", lambda *a: None)
+    monkeypatch.setattr(MainWindow, "mainloop", lambda *a: None)
     monkeypatch.setattr(cli_module, "configure_utf8_stdio", lambda: None)
-    monkeypatch.setattr(importlib.util, "find_spec", lambda name: None)
-    monkeypatch.setattr(sys, "argv", ["pip-ui"])
+    monkeypatch.setattr(sys, "argv", ["pip-ui", "--dry-run"])
 
-    with pytest.raises(SystemExit) as excinfo:
-        cli_module.main()
+    cli_module.main()
 
-    assert excinfo.value.code == 1
-    assert "Tkinter is not available" in capsys.readouterr().err
+    assert len(init_calls) == 1
+    assert init_calls[0]["dry_run"] is True
 
 
 def test_main_launches_window_and_applies_cli_options(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -117,10 +126,11 @@ def test_main_launches_window_and_applies_cli_options(monkeypatch: pytest.Monkey
             self.paths.append(path)
 
     class FakeMainWindow:
-        def __init__(self, *, no_history: bool, safe_mode: bool) -> None:
+        def __init__(self, *, no_history: bool, safe_mode: bool, dry_run: bool = False) -> None:
             created["app"] = self
             self.no_history = no_history
             self.safe_mode = safe_mode
+            self.dry_run = dry_run
             self.after_calls: list[int] = []
             self.interpreter_picker = FakeInterpreterPicker()
             self.workdir_var = FakeVar()
@@ -173,8 +183,8 @@ def test_main_closes_cleanly_on_keyboard_interrupt(monkeypatch: pytest.MonkeyPat
     created: dict[str, object] = {}
 
     class FakeMainWindow:
-        def __init__(self, *, no_history: bool, safe_mode: bool) -> None:
-            _ = (no_history, safe_mode)
+        def __init__(self, *, no_history: bool, safe_mode: bool, dry_run: bool = False) -> None:
+            _ = (no_history, safe_mode, dry_run)
             created["app"] = self
             self.closed = False
 
