@@ -10,14 +10,27 @@ from pip_ui.models import ArgSpec, CommandSpec
 
 # Tool name prefixes stripped when building the argv subcommand token.
 # e.g. "twine_upload" -> "upload", "hatch_build" -> "build"
-_TOOL_PREFIXES = ("twine_", "hatch_", "flit_", "pipx_", "venv_", "audit_", "pypiserver_", "devpi_")
+_TOOL_PREFIXES = (
+    "twine_",
+    "hatch_",
+    "flit_",
+    "pipx_",
+    "venv_",
+    "audit_",
+    "pypiserver_",
+    "devpi_",
+    "poetry_",
+    "pipenv_",
+    "uv_",
+    "deptry_",
+)
 
 # Spec names whose tool takes no subcommand — flags/positionals go directly to the
 # module/executable with no leading subcommand token.
 # "audit"  → python -m pip_audit [flags]
 # "build"  → python -m build [flags]
 # "create" → python -m virtualenv <dest> [flags]
-_NO_SUBCOMMAND = frozenset({"audit", "build", "create"})
+_NO_SUBCOMMAND = frozenset({"audit", "build", "create", "deptry_check"})
 
 
 def _subcommand_for(spec_name: str) -> str:
@@ -104,6 +117,12 @@ def build_argv_for_spec(spec: CommandSpec, values: dict[str, Any]) -> list[str]:
         if index_name:
             index_argv.append(index_name)
         return index_argv
+    if spec.name == "pipenv_rm":
+        rm_argv = ["--rm"]
+        python = str(values.get("python") or "").strip()
+        if python:
+            rm_argv.extend(["--python", python])
+        return rm_argv
 
     # Generic path: derive subcommand token(s) from the spec name.
     # Multi-word subcommands (e.g. hatch_env_show -> "env show") become
@@ -139,8 +158,11 @@ def render_general_args(
                 out.append(token)
             continue
         if arg.field_type == "dropdown":
-            if str(value) and str(value) != (str(arg.default) if arg.default is not None else "") and arg.flag:
-                out.extend([arg.flag, str(value)])
+            if str(value) and str(value) != (str(arg.default) if arg.default is not None else ""):
+                if arg.flag:
+                    out.extend([arg.flag, str(value)])
+                else:
+                    out.append(str(value))
             continue
         # text / file / dir
         if arg.flag:

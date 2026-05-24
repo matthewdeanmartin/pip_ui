@@ -1,10 +1,10 @@
 # pip-ui-tkinter
 
-A Tkinter desktop GUI that puts a friendly face on Python's most-used packaging tools. Instead of remembering flags across `pip`, `pipx`, `build`, `twine`, `virtualenv`, `pip-audit`, `hatch`, `flit`, `pypi-server`, and `devpi`, you click through them in a single window — with discoverable forms, live output, and guardrails on the destructive bits.
+A Tkinter desktop GUI that puts a friendly face on Python's most-used packaging tools. Instead of remembering flags across `pip`, `pipx`, `build`, `twine`, `virtualenv`, `pip-audit`, `hatch`, `flit`, `pypi-server`, `devpi`, `poetry`, `pipenv`, `uv`, and `deptry`, you click through them in a single window — with discoverable forms, live output, and guardrails on the destructive bits.
 
 ## Why pip-ui-tkinter
 
-- **One window, ten tools.** Switch between `pip`, `pipx`, `build`, `twine`, `virtualenv`, `pip-audit`, `hatch`, `flit`, `pypi-server`, and `devpi` from a single tool switcher. No need to context-switch between docs, terminals, and tutorials.
+- **One window, fourteen tools.** Switch between `pip`, `pipx`, `build`, `twine`, `virtualenv`, `pip-audit`, `hatch`, `flit`, `pypi-server`, `devpi`, `poetry`, `pipenv`, `uv`, and `deptry` from a single tool switcher. No need to context-switch between docs, terminals, and tutorials.
 - **Discoverable commands.** Every subcommand and flag is laid out as a tree with a generated form. You see what's available without `--help`-ing your way through ten layers of subcommands.
 - **Real CLI underneath.** The UI doesn't reimplement anything — it constructs the exact CLI invocation and runs it. The full argv is shown before and after every run, so you can copy/paste it into a script or learn what the UI just did.
 - **Safety rails.** Commands are classified as read-only, environment-modifying, destructive, or risky-config. A `--safe-mode` flag prompts for confirmation before anything that would uninstall, purge, or rewrite configuration. Global installs are flagged. Secrets in flags are redacted in history and output.
@@ -28,6 +28,10 @@ Each tool is a plugin with its own command catalog, run mode, and (where relevan
 | `flit` | Build and publish flit-managed projects |
 | `pypi-server` | Run a local PyPI-compatible index for testing |
 | `devpi` | Drive a devpi server and client from a dedicated panel |
+| `poetry` | Add/remove/update dependencies, manage envs, build and publish via poetry |
+| `pipenv` | Install/uninstall packages, manage Pipfile lockfile, audit, run scripts |
+| `uv` | Fast dependency management, venv creation, Python installs, build, publish, cache |
+| `deptry` | Scan for missing, unused, transitive, and misplaced dependencies |
 
 ### Interpreter & environment awareness
 
@@ -76,7 +80,7 @@ pip-ui --no-history                    # do not record history to disk
 pip-ui --diagnostics                   # print env diagnostics and exit
 ```
 
-To get the optional tools that aren't `pip` itself, install the matching extra (`build`, `virtualenv`, `twine`, `pip-audit`, `hatch`, `flit`, `pipx`, `pypiserver`, `devpi`) or `all-tools` for everything.
+To get the optional tools that aren't `pip` itself, install the matching extra (`build`, `virtualenv`, `twine`, `pip-audit`, `hatch`, `flit`, `pipx`, `pypiserver`, `devpi`, `poetry`, `pipenv`, `uv`, `deptry`) or `all-tools` for everything.
 
 ## Requirements
 

@@ -20,7 +20,22 @@ from pip_ui.tools.virtualenv_tool import VIRTUALENV_PLUGIN
 def test_registry_contains_all_tools():
     registry = get_registry()
     names = {p.name for p in registry}
-    assert names == {"pip", "build", "virtualenv", "twine", "pip-audit", "hatch", "flit", "pipx", "pypiserver", "devpi"}
+    assert names == {
+        "pip",
+        "build",
+        "virtualenv",
+        "twine",
+        "pip-audit",
+        "hatch",
+        "flit",
+        "pipx",
+        "pypiserver",
+        "devpi",
+        "poetry",
+        "pipenv",
+        "uv",
+        "deptry",
+    }
 
 
 def test_get_plugin_pip():

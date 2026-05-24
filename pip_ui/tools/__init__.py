@@ -34,14 +34,18 @@ class ToolPlugin:
 
 def _build_registry() -> list[ToolPlugin]:
     from pip_ui.tools.build_tool import BUILD_PLUGIN
+    from pip_ui.tools.deptry_tool import DEPTRY_PLUGIN
     from pip_ui.tools.devpi_tool import DEVPI_PLUGIN
     from pip_ui.tools.flit_tool import FLIT_PLUGIN
     from pip_ui.tools.hatch_tool import HATCH_PLUGIN
     from pip_ui.tools.pip_audit_tool import PIP_AUDIT_PLUGIN
     from pip_ui.tools.pip_tool import PIP_PLUGIN
+    from pip_ui.tools.pipenv_tool import PIPENV_PLUGIN
     from pip_ui.tools.pipx_tool import PIPX_PLUGIN
+    from pip_ui.tools.poetry_tool import POETRY_PLUGIN
     from pip_ui.tools.pypiserver_tool import PYPISERVER_PLUGIN
     from pip_ui.tools.twine_tool import TWINE_PLUGIN
+    from pip_ui.tools.uv_tool import UV_PLUGIN
     from pip_ui.tools.virtualenv_tool import VIRTUALENV_PLUGIN
 
     return [
@@ -55,6 +59,10 @@ def _build_registry() -> list[ToolPlugin]:
         PIPX_PLUGIN,
         PYPISERVER_PLUGIN,
         DEVPI_PLUGIN,
+        POETRY_PLUGIN,
+        PIPENV_PLUGIN,
+        UV_PLUGIN,
+        DEPTRY_PLUGIN,
     ]
 
 

@@ -33,6 +33,10 @@ flit        = ["flit>=3.9"]
 pipx        = ["pipx>=1.4"]
 pypiserver  = ["pypiserver>=2.0"]
 devpi       = ["devpi-server>=6.0", "devpi-client>=7.0"]
+poetry      = ["poetry>=1.8"]
+pipenv      = ["pipenv>=2024.0"]
+uv          = ["uv>=0.4"]
+deptry      = ["deptry>=0.20"]
 all-tools   = [
     "build>=1.0",
     "virtualenv>=20.0",
@@ -44,6 +48,10 @@ all-tools   = [
     "pypiserver>=2.0",
     "devpi-server>=6.0",
     "devpi-client>=7.0",
+    "poetry>=1.8",
+    "pipenv>=2024.0",
+    "uv>=0.4",
+    "deptry>=0.20",
 ]
 
 [project.urls]

@@ -897,4 +897,8 @@ SPECIAL_ARGV: dict[str, list[str]] = {
     "devpi_version": ["--version"],
     "devpi_index_list": ["index", "-l"],
     "devpi_status": ["use"],
+    # pipenv flag-only commands (no subcommand, just a top-level flag)
+    "pipenv_where": ["--where"],
+    "pipenv_venv": ["--venv"],
+    "pipenv_scripts": ["scripts"],
 }
