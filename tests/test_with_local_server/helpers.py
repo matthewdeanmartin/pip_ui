@@ -22,7 +22,9 @@ from pip_ui.runner import PipRunner
 from pip_ui.tools import get_plugin
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-REPO_PYTHON = Path(sys.executable).resolve()
+# Do NOT resolve() — on Linux the venv python is a symlink to the system python,
+# and resolving it loses the venv context so installed extras like 'build' vanish.
+REPO_PYTHON = Path(sys.executable)
 
 
 @dataclass(frozen=True)
@@ -225,5 +227,7 @@ def run_subprocess(
 
 
 def venv_python_path(venv_dir: Path) -> Path:
-    """Return the interpreter path for a Windows virtualenv."""
-    return venv_dir / "Scripts" / "python.exe"
+    """Return the interpreter path for a virtualenv (cross-platform)."""
+    if sys.platform == "win32":
+        return venv_dir / "Scripts" / "python.exe"
+    return venv_dir / "bin" / "python"
