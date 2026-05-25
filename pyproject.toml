@@ -16,7 +16,6 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
@@ -84,6 +83,9 @@ include = ["/README.md", "LICENSE", "/pip_ui", "/tests"]
 
 [dependency-groups]
 dev = [
+    "dont-be-lazy>=0.1.2",
+    "pydoc-fork>=3.0.0",
+
     "bandit>=1.9.4",
     "black>=26.0.0",
     "isort>=6.0.0",
