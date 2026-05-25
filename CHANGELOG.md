@@ -11,17 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `poetry` tool plugin: add/remove/update/show dependencies, lock, check, manage virtual environments, build, publish, version bump, and run commands inside the project environment.
+- `poetry` tool plugin: add/remove/update dependencies, lock, check, manage virtual environments, build, publish, version bump, and run commands inside the project environment.
 - `pipenv` tool plugin: install/uninstall/upgrade/update/sync/clean packages, generate and verify Pipfile.lock, export requirements.txt, inspect dependency graph, run scripts, audit for vulnerabilities, and manage the project virtualenv.
 - `uv` tool plugin: add/remove dependencies, sync and lock the project, display dependency tree, export lockfile, run commands, create virtual environments, build distributions, publish to an index, manage Python versions, and manage the uv cache.
 - `deptry` tool plugin: scan for missing, unused, transitive, and misplaced dependencies in the project source tree.
 
-## [0.2.0] - 2026-05-23
+## [0.2.0] - 2026-05-24
 
 ### Added
 
-- Tool plugin architecture: `build`, `virtualenv`, `twine`, `pip-audit`, `hatch`, `flit`, `pipx`, `pypiserver`, and `devpi` are now first-class plugins with their own command catalogs, forms, and (where relevant) dedicated panels.
-- Tool switcher UI — switch between all supported tools from a single toolbar.
+- Tool plugin architecture: `build`, `virtualenv`, `twine`, `pip-audit`, `hatch`, `flit`, `pipx`, `pypiserver`, and `devpi` are now first-class plugins with their own command catalogs, forms, and dedicated panels.
+- Tool switcher UI: switch between all supported tools from a single toolbar.
 - `pypiserver` plugin: run a local PyPI-compatible index for testing and offline workflows.
 - `devpi` plugin: drive a devpi server and client with a dedicated panel.
 - `tool_detector` module: auto-detects which optional tools are installed and enables them at startup.
@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Custom panel smoke tests (`test_custom_panels_smoke.py`).
 - Security scan via `bandit` added to CI.
 
-## [0.1.0] - 2026-04-26
+## [0.1.0] - 2026-05-17
 
 ### Added
 
@@ -58,3 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--interpreter` and `--working-directory` CLI flags.
 - Secret flag redaction: tokens and passwords hidden in output panel and history file.
 - Full unit test suite covering command specs, config inspector, environment discovery, history, runner, safety, forms, encoding, and more.
+
+[0.3.0]: https://github.com/matthewdeanmartin/pip_ui/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/matthewdeanmartin/pip_ui/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/matthewdeanmartin/pip_ui/releases/tag/v0.1.0
