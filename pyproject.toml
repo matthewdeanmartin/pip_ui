@@ -52,6 +52,22 @@ all-tools   = [
     "uv>=0.4",
     "deptry>=0.20",
 ]
+all  = [
+    "build>=1.0",
+    "virtualenv>=20.0",
+    "twine>=5.0",
+    "pip-audit>=2.7",
+    "hatch>=1.9",
+    "flit>=3.9",
+    "pipx>=1.4",
+    "pypiserver>=2.0",
+    "devpi-server>=6.0",
+    "devpi-client>=7.0",
+    "poetry>=1.8",
+    "pipenv>=2024.0",
+    "uv>=0.4",
+    "deptry>=0.20",
+]
 
 [project.urls]
 Repository = "https://github.com/matthewdeanmartin/pip_ui"

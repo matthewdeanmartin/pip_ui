@@ -96,3 +96,11 @@ To get the optional tools that aren't `pip` itself, install the matching extra (
 ## License
 
 MIT — see [LICENSE](https://github.com/matthewdeanmartin/pip_ui/blob/main/LICENSE).
+
+## Project Links
+
+- [GitHub](https://github.com/matthewdeanmartin/pip_ui)
+- [PyPI](https://pypi.org/project/pip-ui-tkinter/)
+- [Documentation](https://pip-ui.readthedocs.io/en/latest/)
+- [Bug Tracker](https://github.com/matthewdeanmartin/pip_ui/issues)
+- [Change Log](https://github.com/matthewdeanmartin/pip_ui/blob/main/CHANGELOG.md)
