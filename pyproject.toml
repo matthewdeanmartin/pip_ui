@@ -101,6 +101,7 @@ include = ["/README.md", "LICENSE", "/pip_ui", "/tests"]
 dev = [
     "dont-be-lazy>=0.1.2",
     "pydoc-fork>=3.0.0",
+    "keepachangelog-manager-fork>=6.1.1,<7",
 
     "bandit>=1.9.4",
     "black>=26.0.0",
@@ -263,3 +264,21 @@ root_packages = ["pip_ui"]
 # type = "forbidden"
 # source_modules = ["pip_ui"]
 # forbidden_modules = ["tests"]
+
+# changelogmanager (keepachangelog-manager-fork) drives the release workflows.
+# See .github/workflows/create_draft_release.yml and release.yml.
+[tool.changelogmanager.versioning]
+scheme = "semver"
+
+[tool.changelogmanager.validation]
+enforce_preamble = true
+format = "auto"
+
+[tool.changelogmanager.defaults]
+error_format = "github"
+commit_schema = "keepachangelog"
+schema_version = "current"
+
+[[tool.changelogmanager.components]]
+name = "default"
+changelog = "CHANGELOG.md"
