@@ -101,7 +101,7 @@ include = ["/README.md", "LICENSE", "/pip_ui", "/tests"]
 dev = [
     "dont-be-lazy>=0.1.2",
     "pydoc-fork>=3.0.0",
-    "keepachangelog-manager-fork[all]>=6.5.0",
+    "keepachangelog-manager-fork[all]>=6.6.0",
 
     "bandit>=1.9.4",
     "black>=26.0.0",
