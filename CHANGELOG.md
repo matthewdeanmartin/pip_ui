@@ -1,25 +1,25 @@
 # Changelog
-
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Python 3.15 support.
+
+### Changed
+- Requires Python 3.11 or newer; Python 3.10 is no longer supported.
 
 ## [0.3.0] - 2026-05-24
-
 ### Added
-
 - `poetry` tool plugin: add/remove/update dependencies, lock, check, manage virtual environments, build, publish, version bump, and run commands inside the project environment.
 - `pipenv` tool plugin: install/uninstall/upgrade/update/sync/clean packages, generate and verify Pipfile.lock, export requirements.txt, inspect dependency graph, run scripts, audit for vulnerabilities, and manage the project virtualenv.
 - `uv` tool plugin: add/remove dependencies, sync and lock the project, display dependency tree, export lockfile, run commands, create virtual environments, build distributions, publish to an index, manage Python versions, and manage the uv cache.
 - `deptry` tool plugin: scan for missing, unused, transitive, and misplaced dependencies in the project source tree.
 
 ## [0.2.0] - 2026-05-24
-
 ### Added
-
 - Tool plugin architecture: `build`, `virtualenv`, `twine`, `pip-audit`, `hatch`, `flit`, `pipx`, `pypiserver`, and `devpi` are now first-class plugins with their own command catalogs, forms, and dedicated panels.
 - Tool switcher UI: switch between all supported tools from a single toolbar.
 - `pypiserver` plugin: run a local PyPI-compatible index for testing and offline workflows.
@@ -34,9 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security scan via `bandit` added to CI.
 
 ## [0.1.0] - 2026-05-17
-
 ### Added
-
 - Initial release with `pip` support: install, uninstall, list, freeze, show, check, inspect, configure, cache, debug commands.
 - Command spec model (`models.py`): typed `ArgSpec` and `CommandSpec` definitions covering required/optional args, field types, safety levels, and help text.
 - Form renderer: generates the correct widget (checkbox, dropdown, file picker, multi-value, text) from each command spec.

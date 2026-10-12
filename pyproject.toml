@@ -98,6 +98,10 @@ include = ["/README.md", "LICENSE", "/pip_ui", "/tests"]
 
 [dependency-groups]
 dev = [
+    # tests/test_integration_e2e.py runs `python -m build --sdist` then `twine check`;
+    # twine 7 is the first to read Metadata-Version 2.5 (hatchling's current output)
+    "build>=1.0",
+    "twine>=7",
     # Existing developer tools require the HTTPX 0.x API.
     "dont-be-lazy>=0.1.2",
     "pydoc-fork>=3.0.0",
