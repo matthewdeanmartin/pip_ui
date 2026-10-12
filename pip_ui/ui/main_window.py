@@ -352,7 +352,7 @@ class MainWindow(tk.Tk):
 
     def show_upgrade_banner(self, info: UpgradeInfo) -> None:
         self.upgrade_banner_var.set(
-            f"⚡ pip-ui {info.latest} is available (you have {info.current}). " "Use Tools → Upgrade pip-ui to install."
+            f"⚡ pip-ui {info.latest} is available (you have {info.current}). Use Tools → Upgrade pip-ui to install."
         )
         self.upgrade_banner.pack(side=tk.TOP, fill=tk.X)
 

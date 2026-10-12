@@ -60,7 +60,7 @@ class ProxyDialog(tk.Toplevel):
         ).pack(anchor=tk.W)
         ttk.Label(
             header,
-            text=("Configure or test a proxy server for pip. " "Format: scheme://[user:password@]host:port"),
+            text=("Configure or test a proxy server for pip. Format: scheme://[user:password@]host:port"),
             wraplength=560,
             foreground="gray",
             justify=tk.LEFT,

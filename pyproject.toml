@@ -6,21 +6,19 @@ readme = "README.md"
 authors = [{ name = "Matthew Martin", email = "matthewdeanmartin@gmail.com" }]
 keywords = ["pip-ui-tkinter", "pip"]
 license = "MIT"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3.15",
 ]
 dependencies = [
-    "tomli>=2.0; python_version < '3.11'",
 ]
 
 [project.optional-dependencies]
@@ -145,11 +143,11 @@ dev = [
     "deadcode>=2.4.0",
     # API surface / doc checks
     "griffe>=1.0.0",
-    "pydoclint>=0.8.0; python_version >= '3.10'",
+    "pydoclint>=0.8.0",
     "pydoctest==0.2.1",
     # advisory / exploratory tools (standalone make targets, not quality gates)
-    "refurb>=2.0.0; python_version >= '3.10'",
-    "crosshair-tool>=0.0.80; python_version >= '3.10'",
+    "refurb>=2.0.0",
+    "crosshair-tool>=0.0.80",
     "deptry>=0.20.0",
     "import-linter>=2.0",
 ]
@@ -174,7 +172,7 @@ junit_family = "xunit1"
 
 [tool.black]
 line-length = 120
-target-version = ["py310"]
+target-version = ["py311"]
 include = '\.pyi?$'
 exclude = '''
 (
@@ -200,7 +198,7 @@ py_version = 310
 skip_gitignore = true
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 strict = true
 packages = ["pip_ui", "tests"]
 
@@ -219,7 +217,7 @@ ignore_missing_imports = true
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = [
@@ -231,7 +229,7 @@ select = [
     "RUF", # ruff-specific
     "W",   # pycodestyle warnings
 ]
-ignore = [
+ignore = ["RUF100", 
     "E501",   # line too long (black handles this)
 ]
 

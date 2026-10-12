@@ -392,10 +392,9 @@ def test_pipx_install_and_uninstall_test_package():
     install_code, install_out, install_err = run_sync(install_argv, timeout=120)
     assert install_code != -1, f"pipx install subprocess failed to start.\nstderr: {install_err}"
     # pipx exits 0 on clean install or if the package is already installed
-    assert install_code == 0, (
-        f"pipx install {PIPX_TEST_PACKAGE} failed (exit {install_code}).\n"
-        f"stdout: {install_out}\nstderr: {install_err}"
-    )
+    assert (
+        install_code == 0
+    ), f"pipx install {PIPX_TEST_PACKAGE} failed (exit {install_code}).\nstdout: {install_out}\nstderr: {install_err}"
 
     # Uninstall
     uninstall_values = default_values("pipx", "pipx_uninstall")
