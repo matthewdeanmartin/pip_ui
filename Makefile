@@ -207,11 +207,19 @@ security: bandit
 bandit:
 	@$(UV) run bandit -q -c pyproject.toml -r $(PACKAGE)
 
+# PYSEC-2026-3740: nltk model-artifact APIs bypass pathsec; no fixed release yet. nltk is a
+# dev-only transitive dependency (troml-dev-status -> textstat -> nltk), never imported at runtime.
+# PYSEC-2026-3447: setuptools MANIFEST.in bypass when building sdists on macOS (fixed in 83). The optional
+# devpi extra's devpi-server>=6.20.2 (which fixes PYSEC-2026-3661) pins setuptools<=81; pip_ui builds with hatchling.
+AUDIT_IGNORE = PYSEC-2026-3740
+# Fixed upstream but blocked by devpi-server's pin, so ignore outright rather than until-fixed.
+AUDIT_IGNORE_PINNED = PYSEC-2026-3447
+
 audit:
 	@echo "=== uv audit ==="
-	@$(UV) audit
+	@$(UV) audit $(foreach id,$(AUDIT_IGNORE),--ignore-until-fixed $(id)) $(foreach id,$(AUDIT_IGNORE_PINNED),--ignore $(id))
 	@echo "=== pip-audit ==="
-	@$(UV) run pip-audit
+	@$(UV) run pip-audit $(foreach id,$(AUDIT_IGNORE) $(AUDIT_IGNORE_PINNED),--ignore-vuln $(id))
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
 

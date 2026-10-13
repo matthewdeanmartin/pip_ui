@@ -20,6 +20,6 @@ __readme__ = "README.md"
 __credits__ = [{"name": "Matthew Martin", "email": "matthewdeanmartin@gmail.com"}]
 __keywords__ = ["pip-ui-tkinter", "pip"]
 __license__ = "MIT"
-__requires_python__ = ">=3.10"
+__requires_python__ = ">=3.11"
 __status__ = "3 - Alpha"
-__dependencies__ = ["tomli>=2.0; python_version < '3.11'"]
+__dependencies__: list[str] = []

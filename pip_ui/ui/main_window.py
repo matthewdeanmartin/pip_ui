@@ -14,10 +14,7 @@ from datetime import datetime
 from tkinter import filedialog, ttk
 from typing import Any
 
-try:
-    import tomllib
-except ModuleNotFoundError:  # pragma: no cover - Python < 3.11
-    import tomli as tomllib
+import tomllib
 
 from pip_ui.__about__ import __version__
 from pip_ui.history import CommandHistory
