@@ -84,8 +84,10 @@ To get the optional tools that aren't `pip` itself, install the matching extra (
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.11+
 - Tkinter (bundled with python.org installers; on Linux install your distro's `python3-tk` package)
+
+On Python 3.15 for Windows, the full development and `all-tools` dependency sets may require packages without published wheels. Install only the optional tools you need.
 
 ## Links
 
@@ -99,14 +101,9 @@ MIT — see [LICENSE](https://github.com/matthewdeanmartin/pip_ui/blob/main/LICE
 
 ## Project Links
 
+- [Homepage](https://matthewdeanmartin.github.io/pip_ui/)
 - [GitHub](https://github.com/matthewdeanmartin/pip_ui)
 - [PyPI](https://pypi.org/project/pip-ui-tkinter/)
 - [Documentation](https://pip-ui.readthedocs.io/en/latest/)
 - [Bug Tracker](https://github.com/matthewdeanmartin/pip_ui/issues)
 - [Change Log](https://github.com/matthewdeanmartin/pip_ui/blob/main/CHANGELOG.md)
-
-## Python 3.15 verification
-
-Windows 3.15.0rc3 core wheels install and CLI startup works for published 0.2.0 and this checkout's 0.3.0. The local suite passed 361 tests with two local-server skips using wheel-installed test tools and selected build/virtualenv/pip-audit/Twine extras. Some integration commands also discover existing tools on PATH; this does not establish wheel support for those tools.
-
-The all-tools extras remain blocked by missing compatible dependency wheels, including zope-interface and PyYAML. Install only the tools you need with `--only-binary :all:`; do not compile dependencies. Existing Tk worker/destructor warnings remain a threading follow-up.

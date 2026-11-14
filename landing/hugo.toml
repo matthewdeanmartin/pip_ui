@@ -1,0 +1,10 @@
+baseURL = "https://matthewdeanmartin.github.io/pip_ui/"
+locale = "en-us"
+title = "pip-ui-tkinter"
+disableKinds = ["taxonomy", "term", "RSS"]
+
+[params]
+description = "A Tkinter workspace for Python packaging commands, interpreters, and environments."
+docs = "https://pip-ui.readthedocs.io/en/latest/"
+github = "https://github.com/matthewdeanmartin/pip_ui"
+pypi = "https://pypi.org/project/pip-ui-tkinter/"

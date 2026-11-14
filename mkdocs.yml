@@ -1,8 +1,8 @@
 ---
 site_name: pip_ui
-site_url: https://pip_ui.readthedocs.io/
+site_url: https://pip-ui.readthedocs.io/
 site_author: Matthew Martin <matthewdeanmartin@gmail.com>
-site_description: A pip UI tool
+site_description: A Tkinter desktop GUI for Python packaging tools.
 repo_url: https://github.com/matthewdeanmartin/pip_ui
 theme:
   name: readthedocs

@@ -1,7 +1,7 @@
 [project]
 name = "pip-ui-tkinter"
 version = "0.3.0"
-description = "A pip UI tool"
+description = "Tkinter desktop GUI for Python packaging tools with command previews and safety controls"
 readme = "README.md"
 authors = [{ name = "Matthew Martin", email = "matthewdeanmartin@gmail.com" }]
 keywords = ["pip-ui-tkinter", "pip"]
@@ -72,7 +72,7 @@ all  = [
 Repository = "https://github.com/matthewdeanmartin/pip_ui"
 Documentation = "https://pip-ui.readthedocs.io/en/latest/"
 Changelog = "https://github.com/matthewdeanmartin/pip_ui/blob/main/CHANGELOG.md"
-homepage = "https://github.com/matthewdeanmartin/pip_ui"
+Homepage = "https://matthewdeanmartin.github.io/pip_ui/"
 issues = "https://github.com/matthewdeanmartin/pip_ui/issues/"
 
 [project.scripts]
@@ -136,7 +136,6 @@ dev = [
     "pyyaml>=6.0",
     "yamlfix>=1.19.0",
     "interrogate>=1.5.0",
-    "linkcheckmd>=1.4.0",
     "pyenchant>=3.2.2",
     "mkdocs>=1.6.0,<2",
     "mkdocstrings[python]>=0.26.0",

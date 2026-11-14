@@ -6,8 +6,8 @@ build:
   os: ubuntu-24.04
   tools:
     python: '3.13'
+  jobs:
+    install:
+      - "python -m pip install --only-binary :all: -r docs/requirements.txt"
 mkdocs:
   configuration: mkdocs.yml
-python:
-  install:
-    - requirements: docs/requirements.txt
